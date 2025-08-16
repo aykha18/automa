@@ -53,6 +53,22 @@ except ImportError as e:
     print(f"BaytPlaywrightAgent import error: {e}")
     BaytPlaywrightAgent = None
 
+# Import IndeedPlaywrightAgent
+try:
+    from agents.indeed_playwright_agent import IndeedPlaywrightAgent
+    print("✓ Real IndeedPlaywrightAgent imported successfully")
+except ImportError as e:
+    print(f"IndeedPlaywrightAgent import error: {e}")
+    IndeedPlaywrightAgent = None
+
+# Import IndeedHttpAgent
+try:
+    from agents.indeed_http_agent import IndeedHttpAgent
+    print("✓ Real IndeedHttpAgent imported successfully")
+except ImportError as e:
+    print(f"IndeedHttpAgent import error: {e}")
+    IndeedHttpAgent = None
+
 try:
     # from agents.email_agent import EmailAgent
     # print("✓ Real EmailAgent imported successfully")
@@ -204,31 +220,55 @@ def scheduler():
 def run_daily_updates():
     """API endpoint to run daily job portal updates"""
     try:
-        # Run updates for all portals including Bayt.com
+        results = {}
+        
+        # Run updates for Bayt.com
         if BaytPlaywrightAgent is not None:
             # Use Playwright agent for better automation
             bayt_agent = BaytPlaywrightAgent()
             bayt_result = bayt_agent.run_daily_updates()
             bayt_agent.close()
+            results["bayt"] = bayt_result
             print(f"Bayt.com updates (Playwright): {bayt_result['status']} - {bayt_result['message']}")
         elif BaytHttpAgent is not None:
             # Fallback to HTTP agent
             bayt_agent = BaytHttpAgent()
             bayt_result = bayt_agent.run_daily_updates()
             bayt_agent.close()
+            results["bayt"] = bayt_result
             print(f"Bayt.com updates (HTTP): {bayt_result['status']} - {bayt_result['message']}")
+        
+        # Run updates for Indeed.com
+        if IndeedPlaywrightAgent is not None:
+            # Use Playwright agent for better automation
+            indeed_agent = IndeedPlaywrightAgent()
+            indeed_result = indeed_agent.run_daily_updates()
+            indeed_agent.close()
+            results["indeed"] = indeed_result
+            print(f"Indeed.com updates (Playwright): {indeed_result['status']} - {indeed_result['message']}")
+        elif IndeedHttpAgent is not None:
+            # Fallback to HTTP agent
+            indeed_agent = IndeedHttpAgent()
+            indeed_result = indeed_agent.run_daily_updates()
+            indeed_agent.close()
+            results["indeed"] = indeed_result
+            print(f"Indeed.com updates (HTTP): {indeed_result['status']} - {indeed_result['message']}")
         
         # Run updates for other portals
         agents["job_portal"].run_daily_updates()
         
-        return jsonify({"success": True, "message": "Daily updates completed successfully"})
+        return jsonify({
+            "success": True, 
+            "message": "Daily updates completed successfully",
+            "results": results
+        })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
 
 @app.route('/api/refresh-cv', methods=['POST'])
 def refresh_cv():
-    """API endpoint to refresh CV on Bayt.com"""
+    """API endpoint to refresh CV on job portals"""
     try:
         data = request.get_json()
         portal_name = data.get('portal_name', 'bayt')
@@ -260,6 +300,34 @@ def refresh_cv():
                     "success": False,
                     "error": "Failed to refresh CV on Bayt.com"
                 })
+        
+        elif portal_name.lower() == 'indeed':
+            if IndeedPlaywrightAgent is not None:
+                # Use Playwright agent for better automation
+                agent = IndeedPlaywrightAgent()
+                success = agent.refresh_cv()
+                agent.close()
+            elif IndeedHttpAgent is not None:
+                # Fallback to HTTP agent
+                agent = IndeedHttpAgent()
+                success = agent.refresh_cv()
+                agent.close()
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'No Indeed agent available'
+                })
+
+            if success:
+                return jsonify({
+                    "success": True,
+                    "message": "CV refreshed successfully on Indeed.com"
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": "Failed to refresh CV on Indeed.com"
+                })
         else:
             return jsonify({
                 "success": False,
@@ -277,7 +345,7 @@ def test_portal_connection():
         data = request.get_json()
         portal_name = data.get('portal_name', 'indeed')
         
-        # Use BaytHttpAgent for Bayt.com, JobPortalAgent for others
+        # Use specific agents for supported portals
         if portal_name.lower() == 'bayt':
             if BaytPlaywrightAgent is not None:
                 # Use Playwright agent for better automation
@@ -293,6 +361,23 @@ def test_portal_connection():
                 return jsonify({
                     'success': False,
                     'error': 'No Bayt agent available'
+                })
+        
+        elif portal_name.lower() == 'indeed':
+            if IndeedPlaywrightAgent is not None:
+                # Use Playwright agent for better automation
+                agent = IndeedPlaywrightAgent()
+                result = agent.test_connection()
+                agent.close()
+            elif IndeedHttpAgent is not None:
+                # Fallback to HTTP agent
+                agent = IndeedHttpAgent()
+                result = agent.test_connection()
+                agent.close()
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'No Indeed agent available'
                 })
         else:
             result = agents["job_portal"].test_portal_connection(portal_name)
