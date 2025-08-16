@@ -9,6 +9,27 @@ import threading
 from datetime import datetime
 from typing import Dict, List, Any
 
+# Add Flask app import for Railway
+try:
+    from src.web.app import app as flask_app
+    print("✓ Flask app imported in main.py")
+except ImportError as e:
+    print(f"Flask app import error in main.py: {e}")
+    # Create a minimal Flask app as fallback
+    from flask import Flask
+    flask_app = Flask(__name__)
+    
+    @flask_app.route('/')
+    def home():
+        return "Automa - AI Agent & Productivity Tool"
+    
+    @flask_app.route('/health')
+    def health():
+        return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+# Export Flask app for Railway
+app = flask_app
+
 from src.core.config import config
 from src.core.database import db
 from src.core.utils import setup_logging
