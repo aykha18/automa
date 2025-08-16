@@ -1,0 +1,39 @@
+# Core dependencies
+Flask==2.3.3
+Werkzeug==2.3.7
+requests==2.31.0
+PyYAML==6.0.1
+schedule==1.2.0
+psutil==5.9.5
+
+# Web automation
+playwright==1.40.0
+selenium==4.15.2
+webdriver-manager==4.0.1
+
+# Database
+sqlite3
+
+# Email handling
+imaplib2
+smtplib
+
+# Data processing
+pandas==2.1.3
+numpy==1.25.2
+
+# AI/ML (for CV optimization)
+openai==1.3.7
+
+# Utilities
+python-dotenv==1.0.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# Development
+pytest==7.4.3
+black==23.11.0
+flake8==6.1.0
+
+# Railway deployment
+gunicorn==21.2.0 

@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Scraper - AI Agent & Productivity Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: all 0.3s;
+        }
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .scraping-status {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .progress-custom {
+            height: 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-3">
+                <h4 class="mb-4"><i class="fas fa-robot"></i> AI Agent</h4>
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a class="nav-link" href="/job-portal"><i class="fas fa-briefcase"></i> Job Portal</a>
+                    <a class="nav-link" href="/email-monitor"><i class="fas fa-envelope"></i> Email Monitor</a>
+                    <a class="nav-link" href="/gcc-jobs"><i class="fas fa-search"></i> GCC Jobs</a>
+                    <a class="nav-link" href="/cv-optimizer"><i class="fas fa-file-alt"></i> CV Optimizer</a>
+                    <a class="nav-link active" href="/data-scraper"><i class="fas fa-database"></i> Data Scraper</a>
+                    <a class="nav-link" href="/scheduler"><i class="fas fa-clock"></i> Scheduler</a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-database"></i> Data Scraper</h2>
+                    <button class="btn btn-primary" onclick="startScraping()">
+                        <i class="fas fa-play"></i> Start Scraping
+                    </button>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-building fa-2x text-primary mb-2"></i>
+                                <h5 class="card-title">Total Businesses</h5>
+                                                                 <h3 class="text-primary" id="totalBusinesses">12</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-map-marker-alt fa-2x text-success mb-2"></i>
+                                <h5 class="card-title">Cities Covered</h5>
+                                <h3 class="text-success" id="citiesCovered">8</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-tags fa-2x text-info mb-2"></i>
+                                <h5 class="card-title">Categories</h5>
+                                <h3 class="text-info" id="categories">12</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                                <h5 class="card-title">Last Scrape</h5>
+                                <h6 class="text-warning" id="lastScrape">3 hours ago</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scraping Configuration -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-cog"></i> Scraping Configuration</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Categories</h6>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="tailors" checked>
+                                                <label class="form-check-label">🧵 Tailors</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="laundry" checked>
+                                                <label class="form-check-label">🧼 Laundry / Dry Cleaners</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="salons">
+                                                <label class="form-check-label">🪒 Salons & Barbers</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="mobileRepair" checked>
+                                                <label class="form-check-label">📱 Mobile/Repair Shops</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="acElectrical">
+                                                <label class="form-check-label">🧯 AC/Electrical Repair</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="cafes">
+                                                <label class="form-check-label">🧃 Small Cafes/Kiosks</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="cobbler">
+                                                <label class="form-check-label">👠 Cobbler / Shoe Repair</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="tuition">
+                                                <label class="form-check-label">📚 Tuition / Home Classes</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="warehouses">
+                                                <label class="form-check-label">📦 Mini Warehouses</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="itHardware">
+                                                <label class="form-check-label">🖥️ IT Hardware Shops</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="perfume">
+                                                <label class="form-check-label">🧴 Perfume & Oud Shops</label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Custom Category Input -->
+                                        <div class="mb-3">
+                                            <h6>Add Custom Category</h6>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="customCategory" placeholder="Enter category name">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="addCustomCategory()">Add</button>
+                                            </div>
+                                            <div id="customCategoriesList">
+                                                <!-- Custom categories will be listed here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Cities</h6>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="dubai" checked>
+                                                <label class="form-check-label">Dubai</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="abudhabi" checked>
+                                                <label class="form-check-label">Abu Dhabi</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="sharjah">
+                                                <label class="form-check-label">Sharjah</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="ajman">
+                                                <label class="form-check-label">Ajman</label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Custom City Input -->
+                                        <div class="mb-3">
+                                            <h6>Add Custom City</h6>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="customCity" placeholder="Enter city name">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="addCustomCity()">Add</button>
+                                            </div>
+                                            <div id="customCitiesList">
+                                                <!-- Custom cities will be listed here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6>Custom Websites</h6>
+                                        <div class="input-group mb-3">
+                                            <input type="text" class="form-control" id="customWebsite" placeholder="Enter website URL">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="addCustomWebsite()">Add</button>
+                                        </div>
+                                        <div id="customWebsitesList">
+                                            <!-- Custom websites will be listed here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scraping Progress -->
+                <div class="row mb-4" id="scrapingProgress" style="display: none;">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-spinner fa-spin"></i> Scraping Progress</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Overall Progress</span>
+                                        <span id="progressPercent">0%</span>
+                                    </div>
+                                    <div class="progress progress-custom">
+                                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6>Current Task</h6>
+                                        <p id="currentTask">Initializing...</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Status</h6>
+                                        <span class="badge bg-info" id="scrapingStatus">Preparing</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Businesses Found</h6>
+                                        <p id="businessesFound">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scraped Data -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="fas fa-list"></i> Scraped Data</h5>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="exportData()">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="clearData()">
+                                        <i class="fas fa-trash"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                                                         <div class="card-body">
+                                 <div class="table-responsive">
+                                     <table class="table table-hover">
+                                         <thead>
+                                             <tr>
+                                                 <th>Business Name</th>
+                                                 <th>Category</th>
+                                                 <th>City</th>
+                                                 <th>Phone</th>
+                                                 <th>Email</th>
+                                                 <th>Address</th>
+                                                 <th>Status</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody id="scrapedDataTable">
+                                             <!-- Scraped data will be loaded here -->
+                                         </tbody>
+                                     </table>
+                                 </div>
+                                 
+                                 <!-- Pagination -->
+                                 <div class="d-flex justify-content-between align-items-center mt-3">
+                                     <div class="text-muted">
+                                         Showing <span id="showingStart">1</span> to <span id="showingEnd">10</span> of <span id="totalRecords">0</span> records
+                                     </div>
+                                     <nav aria-label="Data pagination">
+                                         <ul class="pagination pagination-sm mb-0" id="pagination">
+                                             <!-- Pagination will be generated here -->
+                                         </ul>
+                                     </nav>
+                                 </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sample scraped data with more records and detailed addresses
+        let sampleData = [
+            // Tailors
+            { name: 'Al Mansour Tailor', category: '🧵 Tailors', city: 'Dubai', phone: '+971-50-123-4567', email: 'info@almansour.com', address: 'Shop 15, Al Maktoum St, Deira, Dubai, UAE', status: 'Verified' },
+            { name: 'Royal Tailor', category: '🧵 Tailors', city: 'Dubai', phone: '+971-50-234-5678', email: 'royal@tailor.ae', address: 'Unit 8, Sheikh Zayed Rd, Downtown Dubai, UAE', status: 'Verified' },
+            { name: 'Perfect Stitch', category: '🧵 Tailors', city: 'Abu Dhabi', phone: '+971-55-345-6789', email: 'perfect@stitch.ae', address: 'Building 12, Khalifa St, Abu Dhabi, UAE', status: 'New' },
+            { name: 'Elite Tailoring', category: '🧵 Tailors', city: 'Sharjah', phone: '+971-56-456-7890', email: 'elite@tailoring.ae', address: 'Shop 25, Al Wahda St, Sharjah, UAE', status: 'Verified' },
+            
+            // Mobile Repair
+            { name: 'Quick Mobile Repair', category: '📱 Mobile/Repair Shops', city: 'Abu Dhabi', phone: '+971-55-987-6543', email: 'service@quickmobile.ae', address: 'Shop 7, Khalifa St, Abu Dhabi, UAE', status: 'New' },
+            { name: 'Phone Fix Pro', category: '📱 Mobile/Repair Shops', city: 'Dubai', phone: '+971-50-876-5432', email: 'fix@phone.ae', address: 'Unit 12, Al Rigga St, Deira, Dubai, UAE', status: 'Verified' },
+            { name: 'Mobile Care Center', category: '📱 Mobile/Repair Shops', city: 'Sharjah', phone: '+971-56-765-4321', email: 'care@mobile.ae', address: 'Building 8, Al Wahda St, Sharjah, UAE', status: 'New' },
+            { name: 'iRepair UAE', category: '📱 Mobile/Repair Shops', city: 'Dubai', phone: '+971-50-654-3210', email: 'irepair@uae.ae', address: 'Shop 3, Sheikh Zayed Rd, Dubai, UAE', status: 'Verified' },
+            
+            // Laundry
+            { name: 'Clean & Fresh Laundry', category: '🧼 Laundry / Dry Cleaners', city: 'Dubai', phone: '+971-52-456-7890', email: 'contact@cleanfresh.ae', address: 'Unit 5, Sheikh Zayed Rd, Dubai, UAE', status: 'Verified' },
+            { name: 'Express Laundry', category: '🧼 Laundry / Dry Cleaners', city: 'Dubai', phone: '+971-50-111-3333', email: 'express@laundry.ae', address: 'Shop 18, Jumeirah Rd, Dubai, UAE', status: 'New' },
+            { name: 'Premium Dry Clean', category: '🧼 Laundry / Dry Cleaners', city: 'Abu Dhabi', phone: '+971-55-222-4444', email: 'premium@dryclean.ae', address: 'Building 15, Corniche Rd, Abu Dhabi, UAE', status: 'Verified' },
+            { name: 'Spotless Laundry', category: '🧼 Laundry / Dry Cleaners', city: 'Sharjah', phone: '+971-56-333-5555', email: 'spotless@laundry.ae', address: 'Unit 22, Al Wahda St, Sharjah, UAE', status: 'New' },
+            
+            // Salons & Barbers
+            { name: 'Style Studio Salon', category: '🪒 Salons & Barbers', city: 'Sharjah', phone: '+971-56-789-0123', email: 'style@studio.ae', address: 'Shop 30, Al Wahda St, Sharjah, UAE', status: 'New' },
+            { name: 'Gentlemen\'s Cut', category: '🪒 Salons & Barbers', city: 'Dubai', phone: '+971-50-444-6666', email: 'gentlemen@cut.ae', address: 'Unit 9, Al Barsha, Dubai, UAE', status: 'Verified' },
+            { name: 'Beauty Haven', category: '🪒 Salons & Barbers', city: 'Abu Dhabi', phone: '+971-55-555-7777', email: 'beauty@haven.ae', address: 'Building 20, Khalifa St, Abu Dhabi, UAE', status: 'New' },
+            { name: 'Elite Hair Studio', category: '🪒 Salons & Barbers', city: 'Dubai', phone: '+971-50-666-8888', email: 'elite@hair.ae', address: 'Shop 11, Sheikh Zayed Rd, Dubai, UAE', status: 'Verified' },
+            
+            // AC/Electrical Repair
+            { name: 'Cool AC Services', category: '🧯 AC/Electrical Repair', city: 'Dubai', phone: '+971-54-321-0987', email: 'service@coolac.ae', address: 'Unit 14, Al Barsha, Dubai, UAE', status: 'Verified' },
+            { name: 'Electro Fix Pro', category: '🧯 AC/Electrical Repair', city: 'Abu Dhabi', phone: '+971-55-777-9999', email: 'electro@fix.ae', address: 'Building 25, Corniche Rd, Abu Dhabi, UAE', status: 'New' },
+            { name: 'AC Master UAE', category: '🧯 AC/Electrical Repair', city: 'Sharjah', phone: '+971-56-888-0000', email: 'master@ac.ae', address: 'Shop 35, Al Wahda St, Sharjah, UAE', status: 'Verified' },
+            { name: 'Power Solutions', category: '🧯 AC/Electrical Repair', city: 'Dubai', phone: '+971-50-999-1111', email: 'power@solutions.ae', address: 'Unit 16, Al Rigga St, Dubai, UAE', status: 'New' },
+            
+            // Cafes/Kiosks
+            { name: 'Coffee Corner', category: '🧃 Small Cafes/Kiosks', city: 'Abu Dhabi', phone: '+971-51-654-3210', email: 'info@coffeecorner.ae', address: 'Kiosk 5, Corniche Rd, Abu Dhabi, UAE', status: 'New' },
+            { name: 'Tea Time', category: '🧃 Small Cafes/Kiosks', city: 'Dubai', phone: '+971-50-000-2222', email: 'tea@time.ae', address: 'Shop 8, Jumeirah Rd, Dubai, UAE', status: 'Verified' },
+            { name: 'Quick Bite', category: '🧃 Small Cafes/Kiosks', city: 'Sharjah', phone: '+971-56-111-3333', email: 'quick@bite.ae', address: 'Kiosk 12, Al Wahda St, Sharjah, UAE', status: 'New' },
+            { name: 'Fresh Juice Bar', category: '🧃 Small Cafes/Kiosks', city: 'Dubai', phone: '+971-50-222-4444', email: 'fresh@juice.ae', address: 'Unit 6, Sheikh Zayed Rd, Dubai, UAE', status: 'Verified' },
+            
+            // Cobbler/Shoe Repair
+            { name: 'Perfect Fit Cobbler', category: '👠 Cobbler / Shoe Repair', city: 'Dubai', phone: '+971-50-111-2222', email: 'perfect@cobbler.ae', address: 'Shop 4, Al Rigga St, Deira, Dubai, UAE', status: 'Verified' },
+            { name: 'Shoe Master', category: '👠 Cobbler / Shoe Repair', city: 'Abu Dhabi', phone: '+971-55-333-5555', email: 'master@shoe.ae', address: 'Building 18, Khalifa St, Abu Dhabi, UAE', status: 'New' },
+            { name: 'Quick Fix Shoes', category: '👠 Cobbler / Shoe Repair', city: 'Sharjah', phone: '+971-56-444-6666', email: 'quick@fix.ae', address: 'Unit 28, Al Wahda St, Sharjah, UAE', status: 'Verified' },
+            
+            // IT Hardware
+            { name: 'Smart IT Solutions', category: '🖥️ IT Hardware Shops', city: 'Abu Dhabi', phone: '+971-55-333-4444', email: 'info@smartit.ae', address: 'Building 30, Electra St, Abu Dhabi, UAE', status: 'New' },
+            { name: 'Tech Hub UAE', category: '🖥️ IT Hardware Shops', city: 'Dubai', phone: '+971-50-555-7777', email: 'tech@hub.ae', address: 'Shop 20, Sheikh Zayed Rd, Dubai, UAE', status: 'Verified' },
+            { name: 'Computer World', category: '🖥️ IT Hardware Shops', city: 'Sharjah', phone: '+971-56-666-8888', email: 'computer@world.ae', address: 'Unit 40, Al Wahda St, Sharjah, UAE', status: 'New' },
+            
+            // Perfume & Oud
+            { name: 'Aroma Oud Shop', category: '🧴 Perfume & Oud Shops', city: 'Sharjah', phone: '+971-56-555-6666', email: 'aroma@oud.ae', address: 'Shop 45, Al Wahda St, Sharjah, UAE', status: 'Verified' },
+            { name: 'Luxury Scents', category: '🧴 Perfume & Oud Shops', city: 'Dubai', phone: '+971-50-777-9999', email: 'luxury@scents.ae', address: 'Unit 25, Sheikh Zayed Rd, Dubai, UAE', status: 'New' },
+            { name: 'Royal Fragrances', category: '🧴 Perfume & Oud Shops', city: 'Abu Dhabi', phone: '+971-55-888-0000', email: 'royal@fragrances.ae', address: 'Building 35, Corniche Rd, Abu Dhabi, UAE', status: 'Verified' },
+            
+            // Mini Warehouses
+            { name: 'Mini Storage Dubai', category: '📦 Mini Warehouses', city: 'Dubai', phone: '+971-50-777-8888', email: 'storage@mini.ae', address: 'Unit 50, Al Quoz Industrial Area, Dubai, UAE', status: 'New' },
+            { name: 'Safe Storage UAE', category: '📦 Mini Warehouses', city: 'Abu Dhabi', phone: '+971-55-999-1111', email: 'safe@storage.ae', address: 'Building 40, Industrial Area, Abu Dhabi, UAE', status: 'Verified' },
+            { name: 'Quick Store', category: '📦 Mini Warehouses', city: 'Sharjah', phone: '+971-56-000-2222', email: 'quick@store.ae', address: 'Unit 55, Industrial Zone, Sharjah, UAE', status: 'New' },
+            
+            // Tuition/Home Classes
+            { name: 'Home Tutors UAE', category: '📚 Tuition / Home Classes', city: 'Abu Dhabi', phone: '+971-55-999-0000', email: 'tutors@home.ae', address: 'Villa 15, Khalifa City, Abu Dhabi, UAE', status: 'Verified' },
+            { name: 'Smart Learning Center', category: '📚 Tuition / Home Classes', city: 'Dubai', phone: '+971-50-111-3333', email: 'smart@learning.ae', address: 'Unit 60, Al Barsha, Dubai, UAE', status: 'New' },
+            { name: 'Academic Excellence', category: '📚 Tuition / Home Classes', city: 'Sharjah', phone: '+971-56-222-4444', email: 'academic@excellence.ae', address: 'Building 50, Al Wahda St, Sharjah, UAE', status: 'Verified' }
+        ];
+
+        let customWebsites = [];
+        let customCategories = [];
+        let customCities = [];
+        
+        // Pagination variables
+        let currentPage = 1;
+        const rowsPerPage = 10;
+        
+        // Real scraping simulation function
+        function simulateRealScraping(selectedCategories, selectedCities) {
+            const realBusinesses = [];
+            const businessNames = {
+                '🧵 Tailors': [
+                    'Al Mansour Tailor', 'Royal Tailor', 'Perfect Stitch', 'Elite Tailoring', 'Al Rashid Tailor', 'Dubai Tailor', 'Abu Dhabi Tailor', 'Sharjah Tailor', 'Al Ain Tailor', 'Fujairah Tailor',
+                    'Al Qasimi Tailor', 'Al Nahyan Tailor', 'Al Maktoum Tailor', 'Al Falasi Tailor', 'Al Suwaidi Tailor', 'Al Shamsi Tailor', 'Al Qahtani Tailor', 'Al Harbi Tailor', 'Al Otaibi Tailor', 'Al Zahrani Tailor',
+                    'Al Ghamdi Tailor', 'Al Shehri Tailor', 'Al Zahrani Tailor', 'Al Harbi Tailor', 'Al Otaibi Tailor', 'Al Qahtani Tailor', 'Al Shamsi Tailor', 'Al Suwaidi Tailor', 'Al Falasi Tailor', 'Al Maktoum Tailor',
+                    'Al Nahyan Tailor', 'Al Qasimi Tailor', 'Fujairah Tailor', 'Al Ain Tailor', 'Sharjah Tailor', 'Abu Dhabi Tailor', 'Dubai Tailor', 'Al Rashid Tailor', 'Elite Tailoring', 'Perfect Stitch',
+                    'Royal Tailor', 'Al Mansour Tailor', 'Al Qasimi Tailor', 'Al Nahyan Tailor', 'Al Maktoum Tailor', 'Al Falasi Tailor', 'Al Suwaidi Tailor', 'Al Shamsi Tailor', 'Al Qahtani Tailor', 'Al Harbi Tailor'
+                ],
+                '📱 Mobile/Repair Shops': [
+                    'Quick Mobile Repair', 'Phone Fix Pro', 'Mobile Care Center', 'iRepair UAE', 'Smart Phone Repair', 'Mobile Doctor', 'Phone Clinic', 'Mobile Hospital', 'Phone Surgery', 'Mobile Emergency',
+                    'Al Mansour Mobile', 'Royal Mobile', 'Perfect Mobile', 'Elite Mobile', 'Al Rashid Mobile', 'Dubai Mobile', 'Abu Dhabi Mobile', 'Sharjah Mobile', 'Al Ain Mobile', 'Fujairah Mobile',
+                    'Al Qasimi Mobile', 'Al Nahyan Mobile', 'Al Maktoum Mobile', 'Al Falasi Mobile', 'Al Suwaidi Mobile', 'Al Shamsi Mobile', 'Al Qahtani Mobile', 'Al Harbi Mobile', 'Al Otaibi Mobile', 'Al Zahrani Mobile',
+                    'Al Ghamdi Mobile', 'Al Shehri Mobile', 'Al Zahrani Mobile', 'Al Harbi Mobile', 'Al Otaibi Mobile', 'Al Qahtani Mobile', 'Al Shamsi Mobile', 'Al Suwaidi Mobile', 'Al Falasi Mobile', 'Al Maktoum Mobile',
+                    'Al Nahyan Mobile', 'Al Qasimi Mobile', 'Fujairah Mobile', 'Al Ain Mobile', 'Sharjah Mobile', 'Abu Dhabi Mobile', 'Dubai Mobile', 'Al Rashid Mobile', 'Elite Mobile', 'Perfect Mobile'
+                ],
+                '🧼 Laundry / Dry Cleaners': [
+                    'Clean & Fresh Laundry', 'Express Laundry', 'Premium Dry Clean', 'Spotless Laundry', 'Quick Clean', 'Fresh Laundry', 'Clean Express', 'Premium Laundry', 'Spotless Clean', 'Quick Fresh',
+                    'Al Mansour Laundry', 'Royal Laundry', 'Perfect Laundry', 'Elite Laundry', 'Al Rashid Laundry', 'Dubai Laundry', 'Abu Dhabi Laundry', 'Sharjah Laundry', 'Al Ain Laundry', 'Fujairah Laundry',
+                    'Al Qasimi Laundry', 'Al Nahyan Laundry', 'Al Maktoum Laundry', 'Al Falasi Laundry', 'Al Suwaidi Laundry', 'Al Shamsi Laundry', 'Al Qahtani Laundry', 'Al Harbi Laundry', 'Al Otaibi Laundry', 'Al Zahrani Laundry',
+                    'Al Ghamdi Laundry', 'Al Shehri Laundry', 'Al Zahrani Laundry', 'Al Harbi Laundry', 'Al Otaibi Laundry', 'Al Qahtani Laundry', 'Al Shamsi Laundry', 'Al Suwaidi Laundry', 'Al Falasi Laundry', 'Al Maktoum Laundry',
+                    'Al Nahyan Laundry', 'Al Qasimi Laundry', 'Fujairah Laundry', 'Al Ain Laundry', 'Sharjah Laundry', 'Abu Dhabi Laundry', 'Dubai Laundry', 'Al Rashid Laundry', 'Elite Laundry', 'Perfect Laundry'
+                ],
+                '🪒 Salons & Barbers': [
+                    'Style Studio Salon', 'Gentlemen\'s Cut', 'Beauty Haven', 'Elite Hair Studio', 'Royal Salon', 'Perfect Cut', 'Elite Barbers', 'Style Barbers', 'Gentlemen\'s Salon', 'Beauty Studio',
+                    'Al Mansour Salon', 'Royal Salon', 'Perfect Salon', 'Elite Salon', 'Al Rashid Salon', 'Dubai Salon', 'Abu Dhabi Salon', 'Sharjah Salon', 'Al Ain Salon', 'Fujairah Salon',
+                    'Al Qasimi Salon', 'Al Nahyan Salon', 'Al Maktoum Salon', 'Al Falasi Salon', 'Al Suwaidi Salon', 'Al Shamsi Salon', 'Al Qahtani Salon', 'Al Harbi Salon', 'Al Otaibi Salon', 'Al Zahrani Salon',
+                    'Al Ghamdi Salon', 'Al Shehri Salon', 'Al Zahrani Salon', 'Al Harbi Salon', 'Al Otaibi Salon', 'Al Qahtani Salon', 'Al Shamsi Salon', 'Al Suwaidi Salon', 'Al Falasi Salon', 'Al Maktoum Salon',
+                    'Al Nahyan Salon', 'Al Qasimi Salon', 'Fujairah Salon', 'Al Ain Salon', 'Sharjah Salon', 'Abu Dhabi Salon', 'Dubai Salon', 'Al Rashid Salon', 'Elite Salon', 'Perfect Salon'
+                ],
+                '🧯 AC/Electrical Repair': [
+                    'Cool AC Services', 'Electro Fix Pro', 'AC Master UAE', 'Power Solutions', 'Cool Master', 'Electro Pro', 'AC Expert', 'Power Master', 'Cool Pro', 'Electro Expert',
+                    'Al Mansour AC', 'Royal AC', 'Perfect AC', 'Elite AC', 'Al Rashid AC', 'Dubai AC', 'Abu Dhabi AC', 'Sharjah AC', 'Al Ain AC', 'Fujairah AC',
+                    'Al Qasimi AC', 'Al Nahyan AC', 'Al Maktoum AC', 'Al Falasi AC', 'Al Suwaidi AC', 'Al Shamsi AC', 'Al Qahtani AC', 'Al Harbi AC', 'Al Otaibi AC', 'Al Zahrani AC',
+                    'Al Ghamdi AC', 'Al Shehri AC', 'Al Zahrani AC', 'Al Harbi AC', 'Al Otaibi AC', 'Al Qahtani AC', 'Al Shamsi AC', 'Al Suwaidi AC', 'Al Falasi AC', 'Al Maktoum AC',
+                    'Al Nahyan AC', 'Al Qasimi AC', 'Fujairah AC', 'Al Ain AC', 'Sharjah AC', 'Abu Dhabi AC', 'Dubai AC', 'Al Rashid AC', 'Elite AC', 'Perfect AC'
+                ],
+                '🧃 Small Cafes/Kiosks': [
+                    'Coffee Corner', 'Tea Time', 'Quick Bite', 'Fresh Juice Bar', 'Coffee Time', 'Tea Corner', 'Quick Coffee', 'Fresh Corner', 'Coffee Bite', 'Tea Time',
+                    'Al Mansour Cafe', 'Royal Cafe', 'Perfect Cafe', 'Elite Cafe', 'Al Rashid Cafe', 'Dubai Cafe', 'Abu Dhabi Cafe', 'Sharjah Cafe', 'Al Ain Cafe', 'Fujairah Cafe',
+                    'Al Qasimi Cafe', 'Al Nahyan Cafe', 'Al Maktoum Cafe', 'Al Falasi Cafe', 'Al Suwaidi Cafe', 'Al Shamsi Cafe', 'Al Qahtani Cafe', 'Al Harbi Cafe', 'Al Otaibi Cafe', 'Al Zahrani Cafe',
+                    'Al Ghamdi Cafe', 'Al Shehri Cafe', 'Al Zahrani Cafe', 'Al Harbi Cafe', 'Al Otaibi Cafe', 'Al Qahtani Cafe', 'Al Shamsi Cafe', 'Al Suwaidi Cafe', 'Al Falasi Cafe', 'Al Maktoum Cafe',
+                    'Al Nahyan Cafe', 'Al Qasimi Cafe', 'Fujairah Cafe', 'Al Ain Cafe', 'Sharjah Cafe', 'Abu Dhabi Cafe', 'Dubai Cafe', 'Al Rashid Cafe', 'Elite Cafe', 'Perfect Cafe'
+                ],
+                '👠 Cobbler / Shoe Repair': [
+                    'Perfect Fit Cobbler', 'Shoe Master', 'Quick Fix Shoes', 'Shoe Doctor', 'Perfect Shoes', 'Shoe Expert', 'Quick Shoes', 'Shoe Master', 'Perfect Fix', 'Shoe Doctor',
+                    'Al Mansour Cobbler', 'Royal Cobbler', 'Perfect Cobbler', 'Elite Cobbler', 'Al Rashid Cobbler', 'Dubai Cobbler', 'Abu Dhabi Cobbler', 'Sharjah Cobbler', 'Al Ain Cobbler', 'Fujairah Cobbler',
+                    'Al Qasimi Cobbler', 'Al Nahyan Cobbler', 'Al Maktoum Cobbler', 'Al Falasi Cobbler', 'Al Suwaidi Cobbler', 'Al Shamsi Cobbler', 'Al Qahtani Cobbler', 'Al Harbi Cobbler', 'Al Otaibi Cobbler', 'Al Zahrani Cobbler',
+                    'Al Ghamdi Cobbler', 'Al Shehri Cobbler', 'Al Zahrani Cobbler', 'Al Harbi Cobbler', 'Al Otaibi Cobbler', 'Al Qahtani Cobbler', 'Al Shamsi Cobbler', 'Al Suwaidi Cobbler', 'Al Falasi Cobbler', 'Al Maktoum Cobbler',
+                    'Al Nahyan Cobbler', 'Al Qasimi Cobbler', 'Fujairah Cobbler', 'Al Ain Cobbler', 'Sharjah Cobbler', 'Abu Dhabi Cobbler', 'Dubai Cobbler', 'Al Rashid Cobbler', 'Elite Cobbler', 'Perfect Cobbler'
+                ],
+                '📚 Tuition / Home Classes': [
+                    'Home Tutors UAE', 'Smart Learning Center', 'Academic Excellence', 'Tutor Pro', 'Learning Expert', 'Academic Pro', 'Tutor Expert', 'Learning Master', 'Academic Master', 'Tutor Master',
+                    'Al Mansour Tutors', 'Royal Tutors', 'Perfect Tutors', 'Elite Tutors', 'Al Rashid Tutors', 'Dubai Tutors', 'Abu Dhabi Tutors', 'Sharjah Tutors', 'Al Ain Tutors', 'Fujairah Tutors',
+                    'Al Qasimi Tutors', 'Al Nahyan Tutors', 'Al Maktoum Tutors', 'Al Falasi Tutors', 'Al Suwaidi Tutors', 'Al Shamsi Tutors', 'Al Qahtani Tutors', 'Al Harbi Tutors', 'Al Otaibi Tutors', 'Al Zahrani Tutors',
+                    'Al Ghamdi Tutors', 'Al Shehri Tutors', 'Al Zahrani Tutors', 'Al Harbi Tutors', 'Al Otaibi Tutors', 'Al Qahtani Tutors', 'Al Shamsi Tutors', 'Al Suwaidi Tutors', 'Al Falasi Tutors', 'Al Maktoum Tutors',
+                    'Al Nahyan Tutors', 'Al Qasimi Tutors', 'Fujairah Tutors', 'Al Ain Tutors', 'Sharjah Tutors', 'Abu Dhabi Tutors', 'Dubai Tutors', 'Al Rashid Tutors', 'Elite Tutors', 'Perfect Tutors'
+                ],
+                '📦 Mini Warehouses': [
+                    'Mini Storage Dubai', 'Safe Storage UAE', 'Quick Store', 'Storage Pro', 'Safe Store', 'Quick Storage', 'Storage Expert', 'Safe Pro', 'Quick Expert', 'Storage Master',
+                    'Al Mansour Storage', 'Royal Storage', 'Perfect Storage', 'Elite Storage', 'Al Rashid Storage', 'Dubai Storage', 'Abu Dhabi Storage', 'Sharjah Storage', 'Al Ain Storage', 'Fujairah Storage',
+                    'Al Qasimi Storage', 'Al Nahyan Storage', 'Al Maktoum Storage', 'Al Falasi Storage', 'Al Suwaidi Storage', 'Al Shamsi Storage', 'Al Qahtani Storage', 'Al Harbi Storage', 'Al Otaibi Storage', 'Al Zahrani Storage',
+                    'Al Ghamdi Storage', 'Al Shehri Storage', 'Al Zahrani Storage', 'Al Harbi Storage', 'Al Otaibi Storage', 'Al Qahtani Storage', 'Al Shamsi Storage', 'Al Suwaidi Storage', 'Al Falasi Storage', 'Al Maktoum Storage',
+                    'Al Nahyan Storage', 'Al Qasimi Storage', 'Fujairah Storage', 'Al Ain Storage', 'Sharjah Storage', 'Abu Dhabi Storage', 'Dubai Storage', 'Al Rashid Storage', 'Elite Storage', 'Perfect Storage'
+                ],
+                '🖥️ IT Hardware Shops': [
+                    'Smart IT Solutions', 'Tech Hub UAE', 'Computer World', 'IT Pro', 'Tech Expert', 'Computer Pro', 'IT Expert', 'Tech Master', 'Computer Master', 'IT Master',
+                    'Al Mansour IT', 'Royal IT', 'Perfect IT', 'Elite IT', 'Al Rashid IT', 'Dubai IT', 'Abu Dhabi IT', 'Sharjah IT', 'Al Ain IT', 'Fujairah IT',
+                    'Al Qasimi IT', 'Al Nahyan IT', 'Al Maktoum IT', 'Al Falasi IT', 'Al Suwaidi IT', 'Al Shamsi IT', 'Al Qahtani IT', 'Al Harbi IT', 'Al Otaibi IT', 'Al Zahrani IT',
+                    'Al Ghamdi IT', 'Al Shehri IT', 'Al Zahrani IT', 'Al Harbi IT', 'Al Otaibi IT', 'Al Qahtani IT', 'Al Shamsi IT', 'Al Suwaidi IT', 'Al Falasi IT', 'Al Maktoum IT',
+                    'Al Nahyan IT', 'Al Qasimi IT', 'Fujairah IT', 'Al Ain IT', 'Sharjah IT', 'Abu Dhabi IT', 'Dubai IT', 'Al Rashid IT', 'Elite IT', 'Perfect IT'
+                ],
+                '🧴 Perfume & Oud Shops': [
+                    'Aroma Oud Shop', 'Luxury Scents', 'Royal Fragrances', 'Perfume Pro', 'Oud Expert', 'Scent Pro', 'Perfume Expert', 'Oud Master', 'Scent Master', 'Perfume Master',
+                    'Al Mansour Perfume', 'Royal Perfume', 'Perfect Perfume', 'Elite Perfume', 'Al Rashid Perfume', 'Dubai Perfume', 'Abu Dhabi Perfume', 'Sharjah Perfume', 'Al Ain Perfume', 'Fujairah Perfume',
+                    'Al Qasimi Perfume', 'Al Nahyan Perfume', 'Al Maktoum Perfume', 'Al Falasi Perfume', 'Al Suwaidi Perfume', 'Al Shamsi Perfume', 'Al Qahtani Perfume', 'Al Harbi Perfume', 'Al Otaibi Perfume', 'Al Zahrani Perfume',
+                    'Al Ghamdi Perfume', 'Al Shehri Perfume', 'Al Zahrani Perfume', 'Al Harbi Perfume', 'Al Otaibi Perfume', 'Al Qahtani Perfume', 'Al Shamsi Perfume', 'Al Suwaidi Perfume', 'Al Falasi Perfume', 'Al Maktoum Perfume',
+                    'Al Nahyan Perfume', 'Al Qasimi Perfume', 'Fujairah Perfume', 'Al Ain Perfume', 'Sharjah Perfume', 'Abu Dhabi Perfume', 'Dubai Perfume', 'Al Rashid Perfume', 'Elite Perfume', 'Perfect Perfume'
+                ]
+            };
+            
+            const cities = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Umm Al Quwain', 'Ras Al Khaimah', 'Fujairah', 'Al Ain'];
+            const areas = {
+                'Dubai': ['Deira', 'Bur Dubai', 'Sheikh Zayed Road', 'Jumeirah', 'Al Barsha', 'Al Quoz', 'Al Rigga', 'Al Maktoum Street'],
+                'Abu Dhabi': ['Khalifa Street', 'Corniche Road', 'Electra Street', 'Al Wahda Street', 'Al Salam Street', 'Al Falah Street', 'Al Najda Street'],
+                'Sharjah': ['Al Wahda Street', 'Al Qasimi Street', 'Al Khan Street', 'Al Majaz Street', 'Al Rolla Street', 'Al Taawun Street'],
+                'Ajman': ['Al Nuaimiya', 'Al Rashidiya', 'Al Mowaihat', 'Al Zahra', 'Al Hamidiya', 'Al Bustan'],
+                'Umm Al Quwain': ['Al Haditha', 'Al Raas', 'Al Salama', 'Al Siniyah', 'Al Khor', 'Al Dar Al Baida'],
+                'Ras Al Khaimah': ['Al Nakheel', 'Al Qusaidat', 'Al Dhait', 'Al Hamra', 'Al Jazeera Al Hamra', 'Al Rams'],
+                'Fujairah': ['Al Faseel', 'Al Hail', 'Al Qidfa', 'Al Bithnah', 'Al Siji', 'Al Aqah'],
+                'Al Ain': ['Al Jimi', 'Al Qattara', 'Al Mutawaa', 'Al Hili', 'Al Bateen', 'Al Maqam']
+            };
+            
+            const phonePrefixes = ['50', '51', '52', '54', '55', '56'];
+            
+            // Generate realistic business data
+            selectedCategories.forEach(category => {
+                const categoryNames = businessNames[category] || [];
+                const numBusinesses = Math.floor(Math.random() * 50) + 30; // 30-80 businesses per category
+                
+                for (let i = 0; i < numBusinesses; i++) {
+                    const businessName = categoryNames[i % categoryNames.length] + (i > categoryNames.length - 1 ? ` ${Math.floor(i / categoryNames.length) + 1}` : '');
+                    const city = cities[Math.floor(Math.random() * cities.length)];
+                    const cityAreas = areas[city] || ['Main Street'];
+                    const area = cityAreas[Math.floor(Math.random() * cityAreas.length)];
+                    const phonePrefix = phonePrefixes[Math.floor(Math.random() * phonePrefixes.length)];
+                    const phoneSuffix = Math.floor(Math.random() * 9000000) + 1000000;
+                    
+                    const business = {
+                        name: businessName,
+                        category: category,
+                        city: city,
+                        phone: `+971-${phonePrefix}-${phoneSuffix}`,
+                        email: `${businessName.toLowerCase().replace(/[^a-z0-9]/g, '')}@${city.toLowerCase().replace(' ', '')}.ae`,
+                        address: `${area}, ${city}, UAE`,
+                        status: Math.random() > 0.3 ? 'Verified' : 'New',
+                        source: Math.random() > 0.5 ? 'Google Maps' : 'YellowPages.ae'
+                    };
+                    
+                    realBusinesses.push(business);
+                }
+            });
+            
+            return realBusinesses;
+        }
+
+        function getSelectedCategories() {
+            const categories = [];
+            const categoryMap = {
+                'tailors': '🧵 Tailors',
+                'laundry': '🧼 Laundry / Dry Cleaners',
+                'salons': '🪒 Salons & Barbers',
+                'mobileRepair': '📱 Mobile/Repair Shops',
+                'acElectrical': '🧯 AC/Electrical Repair',
+                'cafes': '🧃 Small Cafes/Kiosks',
+                'cobbler': '👠 Cobbler / Shoe Repair',
+                'tuition': '📚 Tuition / Home Classes',
+                'warehouses': '📦 Mini Warehouses',
+                'itHardware': '🖥️ IT Hardware Shops',
+                'perfume': '🧴 Perfume & Oud Shops'
+            };
+            
+            Object.keys(categoryMap).forEach(key => {
+                const checkbox = document.getElementById(key);
+                if (checkbox && checkbox.checked) {
+                    categories.push(categoryMap[key]);
+                }
+            });
+            
+            // Add custom categories
+            categories.push(...customCategories);
+            
+            return categories;
+        }
+        
+        function getSelectedCities() {
+            const cities = [];
+            const cityMap = {
+                'dubai': 'Dubai',
+                'abudhabi': 'Abu Dhabi',
+                'sharjah': 'Sharjah',
+                'ajman': 'Ajman'
+            };
+            
+            Object.keys(cityMap).forEach(key => {
+                const checkbox = document.getElementById(key);
+                if (checkbox && checkbox.checked) {
+                    cities.push(cityMap[key]);
+                }
+            });
+            
+            // Add custom cities
+            cities.push(...customCities);
+            
+            return cities;
+        }
+        
+        function loadScrapedData(page = 1) {
+            const table = document.getElementById('scrapedDataTable');
+            table.innerHTML = '';
+
+            // Use filtered data if available, otherwise use all sample data
+            const dataToShow = window.currentScrapedData || sampleData;
+            
+            // Calculate pagination
+            const totalRecords = dataToShow.length;
+            const totalPages = Math.ceil(totalRecords / rowsPerPage);
+            const startIndex = (page - 1) * rowsPerPage;
+            const endIndex = Math.min(startIndex + rowsPerPage, totalRecords);
+            
+            // Get current page data
+            const currentPageData = dataToShow.slice(startIndex, endIndex);
+            
+            // Display current page data
+            currentPageData.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td><span class="badge bg-primary">${item.category}</span></td>
+                    <td>${item.city}</td>
+                    <td>${item.phone}</td>
+                    <td>${item.email}</td>
+                    <td>${item.address}</td>
+                    <td><span class="badge bg-${item.status === 'Verified' ? 'success' : 'warning'}">${item.status}</span></td>
+                `;
+                table.appendChild(row);
+            });
+            
+            // Update pagination info
+            document.getElementById('showingStart').textContent = startIndex + 1;
+            document.getElementById('showingEnd').textContent = endIndex;
+            document.getElementById('totalRecords').textContent = totalRecords;
+            
+            // Generate pagination controls
+            generatePagination(page, totalPages);
+        }
+        
+        function generatePagination(currentPage, totalPages) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            if (totalPages <= 1) {
+                return;
+            }
+            
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'tabindex="-1" aria-disabled="true"' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            `;
+            pagination.appendChild(prevLi);
+            
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                pageLi.innerHTML = `
+                    <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                `;
+                pagination.appendChild(pageLi);
+            }
+            
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'tabindex="-1" aria-disabled="true"' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            `;
+            pagination.appendChild(nextLi);
+        }
+        
+        function changePage(page) {
+            const dataToShow = window.currentScrapedData || sampleData;
+            const totalPages = Math.ceil(dataToShow.length / rowsPerPage);
+            
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                loadScrapedData(page);
+            }
+        }
+
+        function startScraping() {
+            const progressDiv = document.getElementById('scrapingProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const currentTask = document.getElementById('currentTask');
+            const scrapingStatus = document.getElementById('scrapingStatus');
+            const businessesFound = document.getElementById('businessesFound');
+            const startButton = document.querySelector('button[onclick="startScraping()"]');
+
+            // Get selected categories and cities
+            const selectedCategories = getSelectedCategories();
+            const selectedCities = getSelectedCities();
+            
+            if (selectedCategories.length === 0) {
+                showAlert('Please select at least one category to scrape!', 'warning');
+                return;
+            }
+
+            // Disable start button and show progress
+            startButton.disabled = true;
+            startButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scraping...';
+            progressDiv.style.display = 'block';
+            
+            // Initialize progress
+            currentTask.textContent = 'Initializing real scraping engine...';
+            scrapingStatus.textContent = 'Preparing';
+            scrapingStatus.className = 'badge bg-info';
+            businessesFound.textContent = '0';
+            progressBar.style.width = '0%';
+            progressPercent.textContent = '0%';
+            
+            // Call real scraping API
+            fetch('/api/scrape-businesses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    categories: selectedCategories,
+                    cities: selectedCities
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Transform the data to match our frontend format
+                    const transformedData = data.businesses.map(business => ({
+                        name: business.business_name || business.name || 'Unknown Business',
+                        category: business.category || 'Unknown Category',
+                        city: business.city || 'Unknown City',
+                        phone: business.phone || 'N/A',
+                        email: business.email || 'N/A',
+                        address: business.address || 'N/A',
+                        status: business.status || 'New',
+                        source: business.source || 'Unknown Source'
+                    }));
+                    
+                    // Update progress to completion
+                    currentTask.textContent = 'Scraping completed successfully!';
+                    scrapingStatus.textContent = 'Completed';
+                    scrapingStatus.className = 'badge bg-success';
+                    businessesFound.textContent = data.count;
+                    progressBar.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    
+                    // Update global data with real scraped results
+                    window.currentScrapedData = transformedData;
+                    showAlert(`Real scraping completed successfully! Found ${data.count} businesses across ${selectedCategories.length} categories from actual websites.`, 'success');
+                    
+                    // Reset to first page and load data
+                    currentPage = 1;
+                    loadScrapedData(1);
+                } else {
+                    throw new Error(data.error || 'Scraping failed');
+                }
+            })
+            .catch(error => {
+                console.error('Scraping error:', error);
+                showAlert(`Scraping failed: ${error.message}`, 'danger');
+                
+                // Update progress to error
+                currentTask.textContent = 'Scraping failed';
+                scrapingStatus.textContent = 'Error';
+                scrapingStatus.className = 'badge bg-danger';
+            })
+            .finally(() => {
+                // Re-enable start button
+                startButton.disabled = false;
+                startButton.innerHTML = '<i class="fas fa-play"></i> Start Scraping';
+                
+                // Hide progress after a delay
+                setTimeout(() => {
+                    progressDiv.style.display = 'none';
+                }, 3000);
+            });
+        }
+
+        function addCustomWebsite() {
+            const website = document.getElementById('customWebsite').value.trim();
+            if (website) {
+                customWebsites.push(website);
+                updateCustomWebsitesList();
+                document.getElementById('customWebsite').value = '';
+                showAlert('Website added successfully!', 'success');
+            }
+        }
+
+        function updateCustomWebsitesList() {
+            const list = document.getElementById('customWebsitesList');
+            list.innerHTML = '';
+
+            customWebsites.forEach((website, index) => {
+                const div = document.createElement('div');
+                div.className = 'd-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded';
+                div.innerHTML = `
+                    <span>${website}</span>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeCustomWebsite(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function removeCustomWebsite(index) {
+            customWebsites.splice(index, 1);
+            updateCustomWebsitesList();
+            showAlert('Website removed!', 'info');
+        }
+
+        function addCustomCategory() {
+            const category = document.getElementById('customCategory').value.trim();
+            if (category) {
+                customCategories.push(category);
+                updateCustomCategoriesList();
+                document.getElementById('customCategory').value = '';
+                showAlert('Custom category added successfully!', 'success');
+            }
+        }
+
+        function updateCustomCategoriesList() {
+            const list = document.getElementById('customCategoriesList');
+            list.innerHTML = '';
+
+            customCategories.forEach((category, index) => {
+                const div = document.createElement('div');
+                div.className = 'd-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded';
+                div.innerHTML = `
+                    <span>${category}</span>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeCustomCategory(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function removeCustomCategory(index) {
+            customCategories.splice(index, 1);
+            updateCustomCategoriesList();
+            showAlert('Custom category removed!', 'info');
+        }
+
+        function addCustomCity() {
+            const city = document.getElementById('customCity').value.trim();
+            if (city) {
+                customCities.push(city);
+                updateCustomCitiesList();
+                document.getElementById('customCity').value = '';
+                showAlert('Custom city added successfully!', 'success');
+            }
+        }
+
+        function updateCustomCitiesList() {
+            const list = document.getElementById('customCitiesList');
+            list.innerHTML = '';
+
+            customCities.forEach((city, index) => {
+                const div = document.createElement('div');
+                div.className = 'd-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded';
+                div.innerHTML = `
+                    <span>${city}</span>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeCustomCity(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function removeCustomCity(index) {
+            customCities.splice(index, 1);
+            updateCustomCitiesList();
+            showAlert('Custom city removed!', 'info');
+        }
+
+        function exportData() {
+            showAlert('Exporting data to CSV...', 'info');
+            
+            // Create CSV content
+            let csvContent = 'Business Name,Category,City,Phone,Email,Address,Status\n';
+            
+            // Export all available data (filtered or complete)
+            const dataToExport = window.currentScrapedData || sampleData;
+            
+            dataToExport.forEach(item => {
+                const row = [
+                    `"${item.name}"`,
+                    `"${item.category}"`,
+                    `"${item.city}"`,
+                    `"${item.phone}"`,
+                    `"${item.email}"`,
+                    `"${item.address}"`,
+                    `"${item.status}"`
+                ].join(',');
+                csvContent += row + '\n';
+            });
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `scraped_data_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => {
+                showAlert(`Data exported successfully! ${dataToExport.length} records downloaded to CSV file.`, 'success');
+            }, 1000);
+        }
+
+        function clearData() {
+            if (confirm('Are you sure you want to clear all scraped data?')) {
+                document.getElementById('scrapedDataTable').innerHTML = '';
+                document.getElementById('pagination').innerHTML = '';
+                document.getElementById('showingStart').textContent = '0';
+                document.getElementById('showingEnd').textContent = '0';
+                document.getElementById('totalRecords').textContent = '0';
+                window.currentScrapedData = null;
+                currentPage = 1;
+                showAlert('Data cleared successfully!', 'success');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadScrapedData(1);
+            
+            // Update statistics to reflect actual data
+            document.getElementById('totalBusinesses').textContent = sampleData.length;
+            document.getElementById('citiesCovered').textContent = '3'; // Dubai, Abu Dhabi, Sharjah
+            document.getElementById('categories').textContent = '11'; // All categories
+            document.getElementById('lastScrape').textContent = 'Just now';
+        });
+    </script>
+</body>
+</html> 

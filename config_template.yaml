@@ -1,0 +1,57 @@
+# AI Agent & Productivity Tool Configuration
+# Copy this file to config.yaml and update with your settings
+
+# Email Configuration
+email:
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  smtp_username: "your-email@gmail.com"
+  smtp_password: "your-app-password"
+  imap_server: "imap.gmail.com"
+  imap_port: 993
+  imap_username: "your-email@gmail.com"
+  imap_password: "your-app-password"
+
+# Job Portal Credentials
+job_portals:
+  indeed:
+    username: "your-indeed-email"
+    password: "your-indeed-password"
+  linkedin:
+    username: "your-linkedin-email"
+    password: "your-linkedin-password"
+  bayt:
+    username: "your-bayt-email"
+    password: "your-bayt-password"
+
+# OpenAI Configuration (for CV optimization)
+cv_optimization:
+  openai_api_key: "your-openai-api-key"
+
+# Scheduler Configuration
+scheduler:
+  daily_updates:
+    time: "09:00"
+    timezone: "Asia/Dubai"
+  email_monitoring:
+    interval: 30  # minutes
+  app_launcher:
+    applications:
+      - name: "Chrome"
+        path: "C:\Program Files\Google\Chrome\Application\chrome.exe"
+        schedule: "08:00"
+      - name: "Outlook"
+        path: "C:\Program Files\Microsoft Office\root\Office16\OUTLOOK.EXE"
+        schedule: "08:30"
+
+# Database Configuration
+database:
+  type: "sqlite"
+  path: "automa.db"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  file: "automa.log"
+  max_size: "10MB"
+  backup_count: 5
