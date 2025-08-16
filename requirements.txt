@@ -14,6 +14,7 @@ webdriver-manager==4.0.1
 # Data processing
 pandas==2.1.3
 numpy==1.25.2
+python-docx==0.8.11
 
 # AI/ML (for CV optimization)
 openai==1.3.7
