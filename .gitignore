@@ -94,6 +94,7 @@ exports/
 *.csv
 *.xlsx
 *.json
+!railway.json
 
 # Railway specific
 .railway/
