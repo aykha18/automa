@@ -78,7 +78,7 @@ cookies.json
 auth_*.json
 
 # Configuration files with sensitive data
-config.yaml
+# config.yaml  # Allow config.yaml for Railway deployment
 .env
 .env.local
 .env.production

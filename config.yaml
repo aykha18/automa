@@ -1,0 +1,49 @@
+# Automa Configuration File
+# Default configuration for Railway deployment
+
+# Application settings
+app:
+  name: "Automa - AI Agent & Productivity Tool"
+  version: "1.0.0"
+  debug: false
+  port: 8080
+
+# Database settings
+database:
+  type: "sqlite"
+  path: "automa.db"
+
+# Logging settings
+logging:
+  level: "INFO"
+  file: "automa.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# Job portal settings
+job_portals:
+  daily_updates_time: "09:00"
+  auto_refresh_cv: true
+  mock_mode: false
+
+# Email settings
+email:
+  enabled: false
+  check_interval: 300  # 5 minutes
+
+# Web automation settings
+web_automation:
+  headless: true
+  timeout: 30
+  retry_attempts: 3
+
+# AI/ML settings
+ai:
+  openai_api_key: ""  # Set via environment variable
+  model: "gpt-3.5-turbo"
+  max_tokens: 1000
+
+# Development settings
+development:
+  test_mode: false
+  mock_agents: false 

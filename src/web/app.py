@@ -67,7 +67,17 @@ try:
     print("✓ Real SchedulerAgent imported successfully")
 except ImportError as e:
     print(f"SchedulerAgent import error: {e}")
-    SchedulerAgent = None
+    # Try alternative import path
+    try:
+        import sys
+        import os
+        agents_path = os.path.join(os.path.dirname(__file__), '..', 'agents')
+        sys.path.insert(0, agents_path)
+        from scheduler_agent import SchedulerAgent
+        print("✓ Real SchedulerAgent imported with alternative path")
+    except ImportError as e2:
+        print(f"SchedulerAgent alternative import error: {e2}")
+        SchedulerAgent = None
 
 try:
     # from agents.gcc_job_finder import GCCJobFinder
