@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Indeed.com UAE Automation Agent using Playwright
+GulfTalent.com UAE Automation Agent using Playwright
 """
 
 import json
@@ -10,8 +10,8 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 from playwright.sync_api import sync_playwright, Page, Browser, BrowserContext
 
-class IndeedPlaywrightAgent:
-    """Indeed.com UAE automation agent using Playwright"""
+class GulfTalentPlaywrightAgent:
+    """GulfTalent.com UAE automation agent using Playwright"""
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -19,40 +19,22 @@ class IndeedPlaywrightAgent:
         self.context = None
         self.page = None
         self.credentials = None
-        self.cookies = None
-        self._load_credentials()
-        self._load_cookies()
+        self._load_config()
     
-    def _load_credentials(self):
-        """Load Indeed.com credentials from job_portals.json"""
+    def _load_config(self):
+        """Load GulfTalent.com configuration from job_portals.json"""
         try:
             with open('src/data/job_portals.json', 'r') as f:
                 portals = json.load(f)
-                indeed_config = portals.get('indeed', {})
-                self.credentials = indeed_config.get('credentials', {})
-                self.logger.info("Indeed.com credentials loaded successfully")
+                gulftalent_config = portals.get('gulftalent', {})
+                self.credentials = gulftalent_config.get('credentials', {})
+                self.logger.info("GulfTalent.com configuration loaded successfully")
         except Exception as e:
-            self.logger.error(f"Error loading Indeed.com credentials: {e}")
+            self.logger.error(f"Error loading GulfTalent.com configuration: {e}")
             self.credentials = {
-                "username": "khanayubchand@gmail.com",
+                "username": "khanayub@gmail.com",
                 "password": "Miral@123"
             }
-    
-    def _load_cookies(self):
-        """Load Indeed.com cookies if available"""
-        try:
-            with open('src/data/indeed_cookies.json', 'r') as f:
-                self.cookies = json.load(f)
-                self.logger.info("Indeed.com cookies loaded successfully")
-        except Exception as e:
-            self.logger.info("No Indeed.com cookies found, will use login")
-            self.cookies = None
-    
-    def _apply_cookies(self, context: BrowserContext):
-        """Apply stored cookies to browser context"""
-        if self.cookies and 'cookies' in self.cookies:
-            context.add_cookies(self.cookies['cookies'])
-            self.logger.info("Indeed.com cookies applied to browser context")
     
     def start_browser(self, headless: bool = True):
         """Start Playwright browser"""
@@ -65,75 +47,72 @@ class IndeedPlaywrightAgent:
             self.context = self.browser.new_context(
                 user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             )
-            self._apply_cookies(self.context)
             self.page = self.context.new_page()
-            self.logger.info("Indeed.com Playwright browser started successfully")
+            self.logger.info("GulfTalent.com browser started successfully")
             return True
         except Exception as e:
-            self.logger.error(f"Error starting Indeed.com browser: {e}")
+            self.logger.error(f"Error starting GulfTalent.com browser: {e}")
             return False
     
     def login(self) -> bool:
-        """Login to Indeed.com UAE"""
+        """Login to GulfTalent.com"""
         try:
             if not self.page:
                 if not self.start_browser():
                     return False
             
-            # Navigate to Indeed.com UAE
-            self.page.goto("https://ae.indeed.com", wait_until='networkidle')
-            time.sleep(2)
+            # Navigate to GulfTalent.com UAE
+            self.page.goto("https://www.gulftalent.com", wait_until='networkidle')
+            time.sleep(3)
             
             # Check if already logged in
             if self._is_logged_in():
-                self.logger.info("Already logged in to Indeed.com")
+                self.logger.info("Already logged in to GulfTalent.com")
                 return True
             
-            # Click on Sign In button
+            # Click on Login button
             try:
-                # Try the specific Indeed.com UAE sign-in link
-                sign_in_button = self.page.locator('a.css-1sgldzl.e71d0lh0')
-                if sign_in_button.is_visible():
-                    sign_in_button.click()
+                login_selectors = [
+                    'a:has-text("Login")',
+                    'a:has-text("Sign In")',
+                    'button:has-text("Login")',
+                    'button:has-text("Sign In")',
+                    '.login-btn',
+                    '#login-btn',
+                    '[data-testid="login"]'
+                ]
+                
+                login_button = None
+                for selector in login_selectors:
+                    try:
+                        login_button = self.page.locator(selector)
+                        if login_button.is_visible():
+                            self.logger.info(f"Found login button: {selector}")
+                            break
+                    except:
+                        continue
+                
+                if login_button and login_button.is_visible():
+                    login_button.click()
                     time.sleep(3)
                 else:
-                    # Try alternative selectors
-                    sign_in_selectors = [
-                        'a[data-gnav-element-name="SignIn"]',
-                        'a:has-text("Sign in")',
-                        'a:has-text("Sign In")',
-                        'button:has-text("Sign in")',
-                        '[data-testid="signin"]',
-                        '.signin',
-                        '#signin'
-                    ]
-                    
-                    for selector in sign_in_selectors:
-                        try:
-                            sign_in_button = self.page.locator(selector)
-                            if sign_in_button.is_visible():
-                                sign_in_button.click()
-                                time.sleep(3)
-                                break
-                        except:
-                            continue
+                    self.logger.error("Could not find login button")
+                    return False
             except Exception as e:
-                self.logger.error(f"Error clicking sign in: {e}")
-                # Try direct navigation to login page
-                self.page.goto("https://secure.indeed.com/auth?hl=en_AE&co=AE", wait_until='networkidle')
-                time.sleep(3)
+                self.logger.error(f"Error clicking login: {e}")
+                return False
             
-            # Fill login form - Handle modern two-step login
+            # Fill login form
             try:
-                # Step 1: Find and fill email field
+                # Try multiple selectors for email field
                 email_selectors = [
+                    'input[name="email"]',
                     'input[type="email"]',
-                    'input[name*="email"]',
                     'input[placeholder*="email"]',
                     'input[placeholder*="Email"]',
                     'input[id*="email"]',
-                    'input[aria-label*="email"]',
-                    'input[aria-label*="Email"]'
+                    'input[name*="username"]',
+                    'input[name*="user"]'
                 ]
                 
                 email_field = None
@@ -150,82 +129,41 @@ class IndeedPlaywrightAgent:
                     self.logger.error("Could not find email field")
                     return False
                 
-                # Fill email and click continue
-                email_field.fill(self.credentials['username'])
-                self.logger.info("Filled email address")
-                
-                # Look for continue button
-                continue_selectors = [
-                    'button:has-text("Continue")',
-                    'button[type="submit"]',
-                    'input[type="submit"]',
-                    'button:has-text("Sign in")',
-                    'button:has-text("Next")'
+                # Try multiple selectors for password field
+                password_selectors = [
+                    'input[name="password"]',
+                    'input[type="password"]',
+                    'input[placeholder*="password"]',
+                    'input[placeholder*="Password"]',
+                    'input[id*="password"]'
                 ]
                 
-                continue_button = None
-                for selector in continue_selectors:
+                password_field = None
+                for selector in password_selectors:
                     try:
-                        continue_button = self.page.locator(selector)
-                        if continue_button.is_visible():
-                            self.logger.info(f"Found continue button: {selector}")
+                        password_field = self.page.locator(selector)
+                        if password_field.is_visible():
+                            self.logger.info(f"Found password field: {selector}")
                             break
                     except:
                         continue
                 
-                if continue_button and continue_button.is_visible():
-                    continue_button.click()
-                    self.logger.info("Clicked continue button")
-                    time.sleep(3)
-                else:
-                    self.logger.error("Could not find continue button")
-                    return False
-                
-                # Step 2: Handle password page
-                # Wait for password field to appear
-                password_selectors = [
-                    'input[type="password"]',
-                    'input[name*="password"]',
-                    'input[placeholder*="password"]',
-                    'input[placeholder*="Password"]',
-                    'input[id*="password"]',
-                    'input[aria-label*="password"]',
-                    'input[aria-label*="Password"]'
-                ]
-                
-                password_field = None
-                max_wait = 10  # Wait up to 10 seconds for password field
-                for wait_time in range(max_wait):
-                    for selector in password_selectors:
-                        try:
-                            password_field = self.page.locator(selector)
-                            if password_field.is_visible():
-                                self.logger.info(f"Found password field: {selector}")
-                                break
-                        except:
-                            continue
-                    
-                    if password_field and password_field.is_visible():
-                        break
-                    
-                    time.sleep(1)
-                
                 if not password_field or not password_field.is_visible():
-                    self.logger.error("Could not find password field after email submission")
+                    self.logger.error("Could not find password field")
                     return False
                 
-                # Fill password
+                # Fill credentials
+                email_field.fill(self.credentials['username'])
                 password_field.fill(self.credentials['password'])
-                self.logger.info("Filled password")
                 
-                # Look for sign in/submit button
+                # Click submit button
                 submit_selectors = [
-                    'button:has-text("Sign in")',
-                    'button:has-text("Sign In")',
                     'button[type="submit"]',
+                    'button:has-text("Login")',
+                    'button:has-text("Sign In")',
                     'input[type="submit"]',
-                    'button:has-text("Continue")',
-                    'button:has-text("Login")'
+                    '.submit-btn',
+                    '#submit-btn'
                 ]
                 
                 submit_button = None
@@ -240,7 +178,6 @@ class IndeedPlaywrightAgent:
                 
                 if submit_button and submit_button.is_visible():
                     submit_button.click()
-                    self.logger.info("Clicked submit button")
                     time.sleep(5)
                 else:
                     self.logger.error("Could not find submit button")
@@ -248,71 +185,79 @@ class IndeedPlaywrightAgent:
                 
                 # Check if login was successful
                 if self._is_logged_in():
-                    self.logger.info("Successfully logged in to Indeed.com")
-                    self._save_cookies()
+                    self.logger.info("Successfully logged in to GulfTalent.com")
                     return True
                 else:
-                    self.logger.error("Login failed - still on login page")
+                    self.logger.error("Login failed - not logged in")
                     return False
-                    
+                
             except Exception as e:
                 self.logger.error(f"Error during login form submission: {e}")
                 return False
                 
         except Exception as e:
-            self.logger.error(f"Error during Indeed.com login: {e}")
+            self.logger.error(f"Error during GulfTalent.com login: {e}")
             return False
     
     def _is_logged_in(self) -> bool:
-        """Check if user is logged in to Indeed.com"""
+        """Check if user is logged in to GulfTalent.com"""
         try:
             # Check for logged in indicators
             current_url = self.page.url
-            if "account" in current_url or "dashboard" in current_url:
+            if "dashboard" in current_url or "profile" in current_url:
                 return True
             
             # Check for user menu or profile elements
-            user_menu = self.page.locator('[data-testid="user-menu"], .user-menu, .profile-menu')
-            if user_menu.is_visible():
-                return True
+            user_menu_selectors = [
+                '.user-menu',
+                '.profile-menu',
+                '[data-testid="user-menu"]',
+                '.dropdown-menu',
+                '.user-dropdown'
+            ]
             
-            # Check for sign out option
-            sign_out = self.page.locator('a:has-text("Sign out"), a:has-text("Logout")')
-            if sign_out.is_visible():
-                return True
+            for selector in user_menu_selectors:
+                try:
+                    user_menu = self.page.locator(selector)
+                    if user_menu.is_visible():
+                        return True
+                except:
+                    continue
+            
+            # Check for logout option
+            logout_selectors = [
+                'a:has-text("Logout")',
+                'a:has-text("Sign Out")',
+                'button:has-text("Logout")',
+                'button:has-text("Sign Out")'
+            ]
+            
+            for selector in logout_selectors:
+                try:
+                    logout = self.page.locator(selector)
+                    if logout.is_visible():
+                        return True
+                except:
+                    continue
             
             return False
         except:
             return False
     
-    def _save_cookies(self):
-        """Save cookies for future use"""
-        try:
-            cookies = self.context.cookies()
-            cookie_data = {
-                "cookies": cookies,
-                "last_updated": datetime.now().isoformat()
-            }
-            with open('src/data/indeed_cookies.json', 'w') as f:
-                json.dump(cookie_data, f, indent=2)
-            self.logger.info("Indeed.com cookies saved successfully")
-        except Exception as e:
-            self.logger.error(f"Error saving Indeed.com cookies: {e}")
-    
     def test_connection(self) -> Dict[str, Any]:
-        """Test connection to Indeed.com"""
+        """Test connection to GulfTalent.com"""
         try:
             if not self.page:
                 if not self.start_browser():
                     return {"status": "error", "message": "Failed to start browser"}
             
-            self.page.goto("https://ae.indeed.com", wait_until='networkidle')
+            self.page.goto("https://www.gulftalent.com", wait_until='networkidle')
             title = self.page.title()
             
-            if "Indeed" in title:
+            if "GulfTalent" in title or "gulftalent" in title.lower():
                 return {
                     "status": "success",
-                    "message": f"Connected to Indeed.com UAE - {title}",
+                    "message": f"Connected to GulfTalent.com - {title}",
                     "url": self.page.url
                 }
             else:
@@ -328,17 +273,18 @@ class IndeedPlaywrightAgent:
             }
     
     def refresh_cv(self) -> bool:
-        """Refresh CV on Indeed.com"""
+        """Refresh CV on GulfTalent.com"""
         try:
             if not self._is_logged_in():
                 if not self.login():
                     return False
             
-            # Navigate to profile/CV page - try multiple URLs
+            # Navigate to profile/CV page
             profile_urls = [
-                "https://secure.indeed.com/account/profile",
-                "https://profile.indeed.com/?hl=en_AE&co=AE",
-                "https://ae.indeed.com/profile"
+                "https://www.gulftalent.com/profile",
+                "https://www.gulftalent.com/dashboard",
+                "https://www.gulftalent.com/my-profile",
+                "https://www.gulftalent.com/account"
             ]
             
             profile_loaded = False
@@ -348,7 +294,7 @@ class IndeedPlaywrightAgent:
                     time.sleep(3)
                     
                     # Check if we're on a profile page
-                    if "profile" in self.page.url or "account" in self.page.url:
+                    if "profile" in self.page.url or "dashboard" in self.page.url:
                         profile_loaded = True
                         self.logger.info(f"Successfully loaded profile page: {url}")
                         break
@@ -362,14 +308,15 @@ class IndeedPlaywrightAgent:
             
             # Look for CV refresh or update options
             try:
-                # Look for "Indeed Resume" section
+                # Look for resume/CV section
                 resume_selectors = [
-                    'text="Indeed Resume"',
-                    'text="Resumes"',
+                    'text="Resume"',
+                    'text="CV"',
                     '[data-testid="resume"]',
                     '.resume',
                     '#resume',
-                    'a:has-text("Indeed Resume")'
+                    'a:has-text("Resume")',
+                    'a:has-text("CV")'
                 ]
                 
                 resume_found = False
@@ -407,11 +354,11 @@ class IndeedPlaywrightAgent:
                     
                     # If no refresh button, try to click on the resume itself
                     try:
-                        resume_click = self.page.locator('a:has-text("Indeed Resume")')
+                        resume_click = self.page.locator('a:has-text("Resume"), a:has-text("CV")')
                         if resume_click.is_visible():
                             resume_click.click()
                             time.sleep(3)
-                            self.logger.info("Clicked on Indeed Resume")
+                            self.logger.info("Clicked on Resume/CV")
                             
                             # Look for update options on the resume page
                             update_selectors = [
@@ -445,9 +392,9 @@ class IndeedPlaywrightAgent:
             return False
     
     def run_daily_updates(self) -> Dict[str, Any]:
-        """Run daily updates for Indeed.com"""
+        """Run daily updates for GulfTalent.com"""
         try:
-            self.logger.info("Starting Indeed.com daily updates")
+            self.logger.info("Starting GulfTalent.com daily updates")
             
             if not self.start_browser():
                 return {"status": "error", "message": "Failed to start browser"}
@@ -463,7 +410,7 @@ class IndeedPlaywrightAgent:
             
             return {
                 "status": "success",
-                "message": "Indeed.com daily updates completed",
+                "message": "GulfTalent.com daily updates completed",
                 "cv_refreshed": cv_refreshed,
                 "profile_updated": profile_updated
             }
@@ -477,7 +424,7 @@ class IndeedPlaywrightAgent:
         """Update profile completion percentage"""
         try:
             # Navigate to profile page
-            self.page.goto("https://secure.indeed.com/account/profile", wait_until='networkidle')
+            self.page.goto("https://www.gulftalent.com/profile", wait_until='networkidle')
             time.sleep(3)
             
             # Look for profile completion indicators
@@ -510,6 +457,6 @@ class IndeedPlaywrightAgent:
                 self.browser.close()
             if hasattr(self, 'playwright'):
                 self.playwright.stop()
-            self.logger.info("Indeed.com browser closed")
+            self.logger.info("GulfTalent.com browser closed")
         except Exception as e:
             self.logger.error(f"Error closing browser: {e}")

@@ -1,188 +1,281 @@
-# 🚂 Railway Deployment Guide
+# Railway Deployment Guide
 
-## **Will it Automatically Update on Railway?**
+This guide will help you deploy the Automa job portal automation system to Railway for continuous operation.
 
-**✅ YES!** With the proper setup, your job portal updates will run automatically on Railway.
+## 🚀 Prerequisites
 
-## **🚀 Quick Deploy to Railway**
+1. **Railway Account**: Sign up at [railway.app](https://railway.app)
+2. **GitHub Repository**: Your code should be in a GitHub repository
+3. **Railway CLI** (optional): `npm install -g @railway/cli`
 
-### **Option 1: Automatic Deployment (Recommended)**
+## 📋 Step-by-Step Deployment
 
-1. **Push to GitHub:**
-   ```bash
-   git add .
-   git commit -m "Add Railway deployment configuration"
-   git push origin main
-   ```
+### 1. Connect Repository to Railway
 
-2. **Deploy on Railway:**
-   - Go to [Railway.app](https://railway.app)
-   - Connect your GitHub repository
-   - Railway will automatically detect the configuration
-   - Deploy!
+#### Option A: Via Railway Dashboard
+1. Go to [railway.app](https://railway.app)
+2. Click "New Project"
+3. Select "Deploy from GitHub repo"
+4. Choose your repository
+5. Railway will automatically detect the Python project
 
-### **Option 2: Manual Deployment**
-
-1. **Install Railway CLI:**
-   ```bash
-   npm install -g @railway/cli
-   ```
-
-2. **Login and Deploy:**
-   ```bash
-   railway login
-   railway init
-   railway up
-   ```
-
-## **⚙️ Configuration Files**
-
-### **railway.json** (Already Created)
-```json
-{
-  "deploy": {
-    "startCommand": "python railway_start.py",
-    "healthcheckPath": "/",
-    "restartPolicyType": "ON_FAILURE"
-  }
-}
-```
-
-### **Environment Variables**
-Set these in Railway dashboard:
-
+#### Option B: Via Railway CLI
 ```bash
-# Required
-RAILWAY_ENVIRONMENT=production
+# Login to Railway
+railway login
 
-# Optional (for timezone)
+# Link to your project
+railway link
+
+# Deploy
+railway up
+```
+
+### 2. Configure Environment Variables
+
+In your Railway project dashboard, go to **Variables** tab and add:
+
+#### Required Variables
+```bash
+PYTHON_VERSION=3.9
+PORT=5000
 TZ=Asia/Dubai
-
-# Database (if using external)
-DATABASE_URL=your_database_url
+RAILWAY_ENVIRONMENT=production
 ```
 
-## **🔄 How Automatic Updates Work**
+#### Job Portal Credentials
+```bash
+# Bayt.com
+BAYT_USERNAME=your-email@example.com
+BAYT_PASSWORD=your-password
 
-### **✅ What Happens on Railway:**
-
-1. **🚂 Startup Process:**
-   - Railway starts your application
-   - `railway_start.py` runs automatically
-   - Scheduler starts in background thread
-   - Web interface starts on main thread
-
-2. **📅 Daily Schedule:**
-   - Job portal updates run at 9:00 AM daily
-   - Test run happens within 5 minutes of startup
-   - All updates are logged to Railway logs
-
-3. **🔄 Persistence:**
-   - Railway keeps your app running 24/7
-   - Scheduler runs continuously in background
-   - Automatic restarts if the app crashes
-
-### **📊 Monitoring:**
-
-1. **Railway Dashboard:**
-   - View logs in real-time
-   - Monitor deployment status
-   - Check resource usage
-
-2. **Web Interface:**
-   - Access your app at Railway URL
-   - Manual trigger updates
-   - View scheduling status
-
-## **🔧 Customization**
-
-### **Change Update Time:**
-Edit `src/data/config.yaml`:
-```yaml
-scheduler:
-  daily_updates:
-    time: "10:00"  # Change to your preferred time
-    timezone: "Asia/Dubai"
+# NaukriGulf.com
+NAUKRIGULF_USERNAME=your-email@example.com
+NAUKRIGULF_PASSWORD=your-password
 ```
 
-### **Add More Portals:**
-Edit `src/data/job_portals.json`:
+#### Optional Variables
+```bash
+# Logging
+LOG_LEVEL=INFO
+DEBUG=false
+
+# Scheduling
+SCHEDULER_ENABLED=true
+DAILY_UPDATE_TIME=09:00
+```
+
+### 3. Configure Build Settings
+
+Railway will automatically detect the Python project, but you can customize:
+
+#### Build Command
+```bash
+pip install -r requirements.txt && playwright install chromium
+```
+
+#### Start Command
+```bash
+gunicorn --bind 0.0.0.0:$PORT wsgi:app
+```
+
+### 4. Deploy and Monitor
+
+#### Initial Deployment
+```bash
+# Push your code to GitHub
+git add .
+git commit -m "Deploy to Railway"
+git push origin main
+
+# Railway will automatically deploy
+```
+
+#### Monitor Deployment
+1. Check Railway dashboard for build status
+2. View logs for any errors
+3. Test the web interface at your Railway URL
+
+## 🔧 Configuration Files
+
+### Procfile
+```
+web: gunicorn --bind 0.0.0.0:$PORT wsgi:app
+```
+
+### railway.json
 ```json
 {
-  "new_portal": {
-    "url": "https://new-portal.com",
-    "credentials": {
-      "username": "your_email",
-      "password": "your_password"
-    }
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "gunicorn --bind 0.0.0.0:$PORT wsgi:app",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
   }
 }
 ```
 
-## **🚨 Important Notes**
+### runtime.txt
+```
+python-3.9.18
+```
 
-### **✅ What Works:**
-- ✅ Automatic daily updates at 9:00 AM
-- ✅ Web interface accessible 24/7
-- ✅ Background scheduler runs continuously
-- ✅ Automatic restarts on failure
-- ✅ Real-time logging and monitoring
+## 🔒 Security Considerations
 
-### **⚠️ Limitations:**
-- ⚠️ Railway may restart containers occasionally
-- ⚠️ Free tier has usage limits
-- ⚠️ Browser automation requires proper setup
-
-### **🔒 Security:**
-- Store sensitive data in Railway environment variables
-- Don't commit credentials to GitHub
+### Environment Variables
+- Never commit sensitive data to Git
 - Use Railway's built-in secrets management
+- Rotate credentials regularly
 
-## **📱 Access Your App**
+### Cookie Management
+- Store cookies as environment variables
+- Update cookies periodically
+- Monitor authentication status
 
-After deployment:
-1. Get your Railway URL from the dashboard
-2. Access the web interface
-3. Monitor logs for automatic updates
-4. Test manual updates via web interface
+### Access Control
+- Use Railway's access controls
+- Limit who can view logs and variables
+- Monitor usage and costs
 
-## **🛠️ Troubleshooting**
+## 📊 Monitoring and Maintenance
 
-### **Common Issues:**
+### Health Checks
+The application includes health check endpoints:
+- `/health` - Basic health status
+- `/status` - Detailed system status
+- `/logs` - Recent log entries
 
-1. **App Not Starting:**
-   ```bash
-   # Check logs in Railway dashboard
-   # Verify all dependencies are installed
-   ```
+### Logs
+- **Railway Dashboard**: View real-time logs
+- **Application Logs**: Check `automa.log` in the app
+- **Error Monitoring**: Set up alerts for failures
 
-2. **Updates Not Running:**
-   ```bash
-   # Check scheduler logs
-   # Verify timezone settings
-   # Test manual updates via web interface
-   ```
+### Performance Monitoring
+- Monitor CPU and memory usage
+- Track response times
+- Watch for failed deployments
 
-3. **Browser Automation Issues:**
-   ```bash
-   # Railway may need additional setup for Playwright
-   # Consider using HTTP-only mode for Railway
-   ```
+## 🚨 Troubleshooting
 
-### **Support:**
-- Check Railway logs in dashboard
-- Test locally first: `python railway_start.py`
-- Verify configuration files are correct
+### Common Issues
 
-## **🎯 Summary**
+#### Build Failures
+```bash
+# Check build logs
+railway logs
 
-**YES, your job portal updates will run automatically on Railway!**
+# Common fixes:
+# 1. Update requirements.txt
+# 2. Check Python version compatibility
+# 3. Verify all dependencies are listed
+```
 
-The setup includes:
-- ✅ Background scheduler running 24/7
-- ✅ Daily updates at 9:00 AM
-- ✅ Web interface for monitoring
-- ✅ Automatic restarts and error handling
-- ✅ Real-time logging and status updates
+#### Runtime Errors
+```bash
+# Check application logs
+railway logs
 
-Just deploy and your job portals will be updated automatically! 🚀
+# Common issues:
+# 1. Missing environment variables
+# 2. Database connection issues
+# 3. Authentication problems
+```
+
+#### Performance Issues
+- Scale up resources if needed
+- Optimize code for production
+- Monitor resource usage
+
+### Debug Mode
+```bash
+# Enable debug logging
+DEBUG=true
+LOG_LEVEL=DEBUG
+```
+
+## 🔄 Continuous Deployment
+
+### Automatic Deployments
+Railway automatically deploys when you push to your main branch:
+```bash
+git push origin main
+```
+
+### Manual Deployments
+```bash
+# Deploy specific branch
+railway up --branch feature-branch
+
+# Deploy with specific variables
+railway up --variable DEBUG=true
+```
+
+### Rollback
+```bash
+# Rollback to previous deployment
+railway rollback
+
+# Deploy specific commit
+railway up --commit abc123
+```
+
+## 💰 Cost Optimization
+
+### Resource Management
+- Start with minimal resources
+- Scale up based on usage
+- Monitor costs regularly
+
+### Free Tier Limits
+- Railway offers free tier with limitations
+- Monitor usage to avoid charges
+- Consider paid plans for production
+
+## 📈 Scaling
+
+### Horizontal Scaling
+```bash
+# Scale to multiple instances
+railway scale web=3
+```
+
+### Vertical Scaling
+- Upgrade to higher resource tiers
+- Monitor performance metrics
+- Optimize code efficiency
+
+## 🔐 Production Checklist
+
+Before going live:
+
+- [ ] All environment variables configured
+- [ ] Credentials updated and secure
+- [ ] Health checks working
+- [ ] Logs properly configured
+- [ ] Monitoring set up
+- [ ] Backup strategy in place
+- [ ] Error handling tested
+- [ ] Performance optimized
+- [ ] Security reviewed
+- [ ] Documentation updated
+
+## 📞 Support
+
+### Railway Support
+- [Railway Documentation](https://docs.railway.app)
+- [Railway Discord](https://discord.gg/railway)
+- [Railway Status](https://status.railway.app)
+
+### Application Support
+- Check logs for errors
+- Review this documentation
+- Open issues on GitHub
+
+---
+
+**Note**: This deployment guide is specific to Railway. For other platforms, refer to their respective documentation.

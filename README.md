@@ -1,200 +1,279 @@
-# 🤖 AI Agent & Productivity Tool
+# Automa - Job Portal Automation System
 
-A comprehensive automation tool for job portal management, email monitoring, and business data scraping.
+A comprehensive automation system for managing job portal profiles and CV updates across multiple platforms including Bayt.com, NaukriGulf.com, and more.
 
 ## 🚀 Features
 
-### **Job Portal Automation**
-- ✅ **Bayt.com Integration**: Automated CV refresh and profile updates
-- ✅ **Multi-Portal Support**: Indeed, LinkedIn, and other job portals
-- ✅ **Cookie Management**: Secure authentication handling
-- ✅ **Scheduled Updates**: Daily automatic profile refreshes
+### ✅ Working Automations
+- **Bayt.com**: Full automation with CV refresh and profile updates
+- **NaukriGulf.com**: CV headline updates and profile management
+- **Cookie-based authentication**: Secure session management
+- **Scheduled updates**: Daily automated profile refreshes
+- **Web interface**: User-friendly dashboard for monitoring
 
-### **Web Interface**
-- 📊 **Dashboard**: Real-time monitoring and statistics
-- 🔧 **Job Portal Management**: Test connections and run updates
-- 📧 **Email Monitor**: Track email responses and applications
-- 🔍 **GCC Job Finder**: Search jobs across GCC countries
-- 📝 **CV Optimizer**: AI-powered CV optimization
-- 🗄️ **Data Scraper**: Business data collection
+### 🔧 Technical Features
+- **Playwright automation**: Robust browser automation
+- **Multi-platform support**: Windows, Linux, macOS
+- **Railway deployment**: Cloud-ready configuration
+- **Background scheduling**: Continuous operation
+- **Error handling**: Comprehensive logging and recovery
 
-### **Scheduling & Automation**
-- ⏰ **Daily Updates**: Automatic job portal refreshes at 9:00 AM
-- 🔄 **Background Services**: Continuous monitoring and updates
-- 📈 **Statistics Tracking**: Monitor success rates and activity
+## 📋 Prerequisites
+
+- Python 3.8+
+- Playwright browsers
+- Git
+- Railway account (for deployment)
 
 ## 🛠️ Installation
 
-### **Prerequisites**
-- Python 3.8+
-- Git
-- Chrome/Chromium (for browser automation)
+### 1. Clone the Repository
+```bash
+git clone <your-repo-url>
+cd automa
+```
 
-### **Quick Start**
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+playwright install chromium
+```
 
-1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd automa
-   ```
+### 3. Configure the System
+```bash
+# Copy configuration template
+cp config_template.yaml config.yaml
 
-2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Install Playwright browsers:**
-   ```bash
-   playwright install
-   ```
-
-4. **Configure settings:**
-   ```bash
-   cp config_template.yaml config.yaml
-   # Edit config.yaml with your credentials
-   ```
-
-5. **Run the application:**
-   ```bash
-   # Web interface
-   python start_web.py
-   
-   # Command line interface
-   python main.py --mode interactive
-   ```
+# Edit configuration with your credentials
+# See Configuration section below
+```
 
 ## ⚙️ Configuration
 
-### **Job Portal Credentials**
-Edit `src/data/job_portals.json`:
+### Job Portal Credentials
+Edit `src/data/job_portals.json` to configure your job portal accounts:
+
 ```json
 {
   "bayt": {
+    "enabled": true,
     "credentials": {
       "username": "your-email@example.com",
       "password": "your-password"
-    }
+    },
+    "update_fields": ["cv_refresh", "profile_completion"]
+  },
+  "naukrigulf": {
+    "enabled": true,
+    "credentials": {
+      "username": "your-email@example.com", 
+      "password": "your-password"
+    },
+    "update_fields": ["cv_refresh"]
   }
 }
 ```
 
-### **Scheduler Settings**
-Edit `config.yaml`:
-```yaml
-scheduler:
-  daily_updates:
-    time: "09:00"
-    timezone: "Asia/Dubai"
+### Cookie Management
+For enhanced security and bypassing login issues, the system uses cookie-based authentication:
+
+1. **Extract cookies manually** from your browser after logging in
+2. **Store cookies** in `src/data/[portal]_cookies.json` files
+3. **System automatically loads** cookies for authentication
+
+## 🚀 Usage
+
+### Local Development
+
+#### Start the Web Interface
+```bash
+python start_web.py
+# Access at http://localhost:5000
 ```
 
-## 🚂 Railway Deployment
-
-### **Automatic Deployment**
-1. Push to GitHub
-2. Connect repository to Railway
-3. Set environment variables
-4. Deploy!
-
-### **Environment Variables**
+#### Run Manual Updates
 ```bash
-RAILWAY_ENVIRONMENT=production
-TZ=Asia/Dubai
+python main.py --portal bayt --action refresh_cv
+python main.py --portal naukrigulf --action update_headline
 ```
 
-## 📖 Usage
-
-### **Web Interface**
-- Access at `http://localhost:5000`
-- Monitor job portal status
-- Run manual updates
-- View statistics
-
-### **Command Line**
+#### Start Background Scheduler
 ```bash
-# Search for jobs
-python main.py --mode job_search --skill "Python Developer" --countries AE SA
-
-# Run daily updates
-python main.py --mode daily_updates
-
-# Start background services
-python main.py --start-services
+python main.py --scheduler
 ```
 
-### **Interactive Mode**
+### Railway Deployment
+
+#### 1. Deploy to Railway
 ```bash
-python main.py --mode interactive
+# Connect to Railway
+railway login
+railway link
+
+# Deploy
+railway up
+```
+
+#### 2. Configure Environment Variables
+Set the following in Railway dashboard:
+- `PYTHON_VERSION`: 3.9
+- `PORT`: 5000
+- Add your credentials as environment variables
+
+#### 3. Start the Service
+```bash
+railway start
+```
+
+## 📁 Project Structure
+
+```
+automa/
+├── src/
+│   ├── agents/           # Automation agents for each portal
+│   │   ├── bayt_playwright_agent.py
+│   │   ├── naukrigulf_playwright_agent.py
+│   │   └── scheduler_agent.py
+│   ├── core/            # Core functionality
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   └── utils.py
+│   ├── data/            # Configuration and data files
+│   │   ├── job_portals.json
+│   │   ├── bayt_cookies.json
+│   │   └── naukrigulf_cookies.json
+│   └── web/             # Web interface
+│       ├── app.py
+│       ├── static/
+│       └── templates/
+├── scripts/             # Utility scripts
+├── docs/               # Documentation
+├── main.py             # Main application entry point
+├── start_web.py        # Web interface starter
+├── requirements.txt    # Python dependencies
+├── Procfile           # Railway deployment
+├── railway.json       # Railway configuration
+└── README.md          # This file
 ```
 
 ## 🔧 Development
 
-### **Project Structure**
+### Adding New Job Portals
+
+1. **Create agent file**: `src/agents/[portal]_playwright_agent.py`
+2. **Add configuration**: Update `src/data/job_portals.json`
+3. **Implement methods**: 
+   - `login()` - Authentication
+   - `refresh_cv()` - CV updates
+   - `update_profile()` - Profile management
+4. **Test automation**: Create test scripts
+5. **Add to scheduler**: Update `scheduler_agent.py`
+
+### Testing
+
+```bash
+# Test specific portal
+python -m pytest scripts/tests/test_[portal].py
+
+# Test all automations
+python main.py --test-all
 ```
-automa/
-├── src/
-│   ├── agents/          # Automation agents
-│   ├── core/           # Core functionality
-│   ├── data/           # Configuration files
-│   └── web/            # Web interface
-├── config.yaml         # Main configuration
-├── requirements.txt    # Dependencies
-└── README.md          # This file
-```
-
-### **Adding New Job Portals**
-1. Add portal configuration to `src/data/job_portals.json`
-2. Create agent in `src/agents/`
-3. Update scheduler integration
-
-## 🔒 Security
-
-- Store sensitive data in environment variables
-- Use Railway's built-in secrets management
-- Never commit credentials to Git
-- Regular cookie updates for authentication
 
 ## 📊 Monitoring
 
-### **Logs**
-- Application logs: `automa.log`
-- Railway dashboard logs
-- Web interface monitoring
+### Web Dashboard
+Access the web interface at `http://localhost:5000` to:
+- Monitor automation status
+- View logs and errors
+- Trigger manual updates
+- Configure settings
 
-### **Statistics**
-- Job portal success rates
-- Update frequency tracking
-- Error monitoring
+### Logs
+- **Application logs**: `automa.log`
+- **Portal-specific logs**: `logs/[portal].log`
+- **Scheduler logs**: `logs/scheduler.log`
 
-## 🛠️ Troubleshooting
+## 🔒 Security
 
-### **Common Issues**
-1. **Browser Automation**: Install Playwright browsers
-2. **Authentication**: Update cookies regularly
-3. **Scheduling**: Check timezone settings
+### Cookie Management
+- Cookies are stored locally in JSON format
+- Never commit cookies to version control
+- Rotate cookies regularly for security
 
-### **Support**
-- Check logs in `automa.log`
-- Monitor Railway dashboard
-- Test locally before deployment
+### Credentials
+- Store credentials in environment variables
+- Use Railway secrets for production
+- Never hardcode passwords in code
 
-## 📄 License
+## 🚨 Troubleshooting
 
-This project is licensed under the MIT License.
+### Common Issues
+
+#### Connection Timeouts
+- Check internet connectivity
+- Verify portal URLs are accessible
+- Increase timeout values in configuration
+
+#### Authentication Failures
+- Update cookies manually
+- Verify credentials are correct
+- Check for CAPTCHA or 2FA requirements
+
+#### Browser Automation Issues
+- Update Playwright browsers: `playwright install`
+- Check for portal UI changes
+- Review error logs for specific selectors
+
+### Debug Mode
+```bash
+# Enable debug logging
+python main.py --debug --portal bayt --action refresh_cv
+```
+
+## 📈 Performance
+
+### Optimization Tips
+- Use headless mode for production
+- Implement retry mechanisms
+- Cache successful operations
+- Monitor resource usage
+
+### Scaling
+- Deploy multiple instances
+- Use load balancing
+- Implement queue systems for high volume
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+3. Implement your changes
+4. Add tests
+5. Submit a pull request
 
-## 📞 Support
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
 
 For support and questions:
-- Check the documentation
-- Review logs and error messages
-- Test configurations locally
+- Check the documentation in `docs/`
+- Review the troubleshooting section
+- Open an issue on GitHub
+- Contact the development team
+
+## 🔄 Changelog
+
+### Version 1.0.0
+- ✅ Bayt.com automation working
+- ✅ NaukriGulf.com automation working
+- ✅ Cookie-based authentication
+- ✅ Web interface
+- ✅ Railway deployment
+- ✅ Background scheduling
+- ✅ Comprehensive error handling
 
 ---
 
-**Made with ❤️ for automated job hunting**
+**Note**: This automation system is designed for personal use. Please respect the terms of service of each job portal and use responsibly.

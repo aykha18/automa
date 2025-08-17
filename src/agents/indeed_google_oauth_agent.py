@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """
-Indeed.com UAE Automation Agent using Playwright
+Indeed.com UAE Automation Agent using Google OAuth
 """
 
 import json
 import time
 import logging
+import requests
 from datetime import datetime
 from typing import Dict, Any, Optional
 from playwright.sync_api import sync_playwright, Page, Browser, BrowserContext
+from urllib.parse import urlencode, parse_qs, urlparse
 
-class IndeedPlaywrightAgent:
-    """Indeed.com UAE automation agent using Playwright"""
+class IndeedGoogleOAuthAgent:
+    """Indeed.com UAE automation agent using Google OAuth"""
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -19,40 +21,91 @@ class IndeedPlaywrightAgent:
         self.context = None
         self.page = None
         self.credentials = None
-        self.cookies = None
-        self._load_credentials()
-        self._load_cookies()
+        self.oauth_settings = None
+        self.access_token = None
+        self.refresh_token = None
+        self._load_config()
+        self._load_tokens()
     
-    def _load_credentials(self):
-        """Load Indeed.com credentials from job_portals.json"""
+    def _load_config(self):
+        """Load Indeed.com configuration from job_portals.json"""
         try:
             with open('src/data/job_portals.json', 'r') as f:
                 portals = json.load(f)
                 indeed_config = portals.get('indeed', {})
                 self.credentials = indeed_config.get('credentials', {})
-                self.logger.info("Indeed.com credentials loaded successfully")
+                self.oauth_settings = indeed_config.get('oauth_settings', {})
+                self.logger.info("Indeed.com OAuth configuration loaded successfully")
         except Exception as e:
-            self.logger.error(f"Error loading Indeed.com credentials: {e}")
+            self.logger.error(f"Error loading Indeed.com configuration: {e}")
             self.credentials = {
                 "username": "khanayubchand@gmail.com",
-                "password": "Miral@123"
+                "password": "Aykhamiral@18"
+            }
+            self.oauth_settings = {
+                "google_client_id": "YOUR_GOOGLE_CLIENT_ID",
+                "google_client_secret": "YOUR_GOOGLE_CLIENT_SECRET",
+                "redirect_uri": "http://localhost:8080/oauth/callback",
+                "scopes": ["openid", "email", "profile"]
             }
     
-    def _load_cookies(self):
-        """Load Indeed.com cookies if available"""
+    def _load_tokens(self):
+        """Load stored OAuth tokens if available"""
         try:
-            with open('src/data/indeed_cookies.json', 'r') as f:
-                self.cookies = json.load(f)
-                self.logger.info("Indeed.com cookies loaded successfully")
+            with open('src/data/indeed_oauth_tokens.json', 'r') as f:
+                tokens = json.load(f)
+                self.access_token = tokens.get('access_token')
+                self.refresh_token = tokens.get('refresh_token')
+                self.logger.info("OAuth tokens loaded successfully")
         except Exception as e:
-            self.logger.info("No Indeed.com cookies found, will use login")
-            self.cookies = None
+            self.logger.info("No OAuth tokens found, will need to authenticate")
+            self.access_token = None
+            self.refresh_token = None
     
-    def _apply_cookies(self, context: BrowserContext):
-        """Apply stored cookies to browser context"""
-        if self.cookies and 'cookies' in self.cookies:
-            context.add_cookies(self.cookies['cookies'])
-            self.logger.info("Indeed.com cookies applied to browser context")
+    def _save_tokens(self):
+        """Save OAuth tokens for future use"""
+        try:
+            token_data = {
+                "access_token": self.access_token,
+                "refresh_token": self.refresh_token,
+                "last_updated": datetime.now().isoformat()
+            }
+            with open('src/data/indeed_oauth_tokens.json', 'w') as f:
+                json.dump(token_data, f, indent=2)
+            self.logger.info("OAuth tokens saved successfully")
+        except Exception as e:
+            self.logger.error(f"Error saving OAuth tokens: {e}")
+    
+    def _refresh_access_token(self) -> bool:
+        """Refresh access token using refresh token"""
+        try:
+            if not self.refresh_token:
+                return False
+            
+            refresh_url = "https://oauth2.googleapis.com/token"
+            data = {
+                "client_id": self.oauth_settings["google_client_id"],
+                "client_secret": self.oauth_settings["google_client_secret"],
+                "refresh_token": self.refresh_token,
+                "grant_type": "refresh_token"
+            }
+            
+            response = requests.post(refresh_url, data=data)
+            if response.status_code == 200:
+                token_data = response.json()
+                self.access_token = token_data.get('access_token')
+                if token_data.get('refresh_token'):
+                    self.refresh_token = token_data['refresh_token']
+                self._save_tokens()
+                self.logger.info("Access token refreshed successfully")
+                return True
+            else:
+                self.logger.error(f"Failed to refresh token: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error refreshing access token: {e}")
+            return False
     
     def start_browser(self, headless: bool = True):
         """Start Playwright browser"""
@@ -65,20 +118,65 @@ class IndeedPlaywrightAgent:
             self.context = self.browser.new_context(
                 user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             )
-            self._apply_cookies(self.context)
             self.page = self.context.new_page()
-            self.logger.info("Indeed.com Playwright browser started successfully")
+            self.logger.info("Indeed.com OAuth browser started successfully")
             return True
         except Exception as e:
             self.logger.error(f"Error starting Indeed.com browser: {e}")
             return False
     
+    def _get_google_oauth_url(self) -> str:
+        """Generate Google OAuth URL"""
+        base_url = "https://accounts.google.com/o/oauth2/v2/auth"
+        params = {
+            "client_id": self.oauth_settings["google_client_id"],
+            "redirect_uri": self.oauth_settings["redirect_uri"],
+            "response_type": "code",
+            "scope": " ".join(self.oauth_settings["scopes"]),
+            "access_type": "offline",
+            "prompt": "consent"
+        }
+        return f"{base_url}?{urlencode(params)}"
+    
+    def _exchange_code_for_tokens(self, auth_code: str) -> bool:
+        """Exchange authorization code for access and refresh tokens"""
+        try:
+            token_url = "https://oauth2.googleapis.com/token"
+            data = {
+                "client_id": self.oauth_settings["google_client_id"],
+                "client_secret": self.oauth_settings["google_client_secret"],
+                "code": auth_code,
+                "grant_type": "authorization_code",
+                "redirect_uri": self.oauth_settings["redirect_uri"]
+            }
+            
+            response = requests.post(token_url, data=data)
+            if response.status_code == 200:
+                token_data = response.json()
+                self.access_token = token_data.get('access_token')
+                self.refresh_token = token_data.get('refresh_token')
+                self._save_tokens()
+                self.logger.info("Successfully exchanged code for tokens")
+                return True
+            else:
+                self.logger.error(f"Failed to exchange code for tokens: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error exchanging code for tokens: {e}")
+            return False
+    
     def login(self) -> bool:
-        """Login to Indeed.com UAE"""
+        """Login to Indeed.com using Google OAuth"""
         try:
             if not self.page:
                 if not self.start_browser():
                     return False
+            
+            # Check if we have valid tokens
+            if self.access_token and self.refresh_token:
+                if self._refresh_access_token():
+                    return self._login_with_google_oauth()
             
             # Navigate to Indeed.com UAE
             self.page.goto("https://ae.indeed.com", wait_until='networkidle')
@@ -91,176 +189,115 @@ class IndeedPlaywrightAgent:
             
             # Click on Sign In button
             try:
-                # Try the specific Indeed.com UAE sign-in link
                 sign_in_button = self.page.locator('a.css-1sgldzl.e71d0lh0')
                 if sign_in_button.is_visible():
                     sign_in_button.click()
                     time.sleep(3)
                 else:
-                    # Try alternative selectors
-                    sign_in_selectors = [
-                        'a[data-gnav-element-name="SignIn"]',
-                        'a:has-text("Sign in")',
-                        'a:has-text("Sign In")',
-                        'button:has-text("Sign in")',
-                        '[data-testid="signin"]',
-                        '.signin',
-                        '#signin'
-                    ]
-                    
-                    for selector in sign_in_selectors:
-                        try:
-                            sign_in_button = self.page.locator(selector)
-                            if sign_in_button.is_visible():
-                                sign_in_button.click()
-                                time.sleep(3)
-                                break
-                        except:
-                            continue
+                    self.logger.error("Could not find sign in button")
+                    return False
             except Exception as e:
                 self.logger.error(f"Error clicking sign in: {e}")
-                # Try direct navigation to login page
-                self.page.goto("https://secure.indeed.com/auth?hl=en_AE&co=AE", wait_until='networkidle')
-                time.sleep(3)
+                return False
             
-            # Fill login form - Handle modern two-step login
-            try:
-                # Step 1: Find and fill email field
-                email_selectors = [
-                    'input[type="email"]',
-                    'input[name*="email"]',
-                    'input[placeholder*="email"]',
-                    'input[placeholder*="Email"]',
-                    'input[id*="email"]',
-                    'input[aria-label*="email"]',
-                    'input[aria-label*="Email"]'
-                ]
-                
-                email_field = None
-                for selector in email_selectors:
-                    try:
-                        email_field = self.page.locator(selector)
-                        if email_field.is_visible():
-                            self.logger.info(f"Found email field: {selector}")
-                            break
-                    except:
-                        continue
-                
-                if not email_field or not email_field.is_visible():
-                    self.logger.error("Could not find email field")
-                    return False
-                
-                # Fill email and click continue
-                email_field.fill(self.credentials['username'])
-                self.logger.info("Filled email address")
-                
-                # Look for continue button
-                continue_selectors = [
-                    'button:has-text("Continue")',
-                    'button[type="submit"]',
-                    'input[type="submit"]',
-                    'button:has-text("Sign in")',
-                    'button:has-text("Next")'
-                ]
-                
-                continue_button = None
-                for selector in continue_selectors:
-                    try:
-                        continue_button = self.page.locator(selector)
-                        if continue_button.is_visible():
-                            self.logger.info(f"Found continue button: {selector}")
-                            break
-                    except:
-                        continue
-                
-                if continue_button and continue_button.is_visible():
-                    continue_button.click()
-                    self.logger.info("Clicked continue button")
-                    time.sleep(3)
-                else:
-                    self.logger.error("Could not find continue button")
-                    return False
-                
-                # Step 2: Handle password page
-                # Wait for password field to appear
-                password_selectors = [
-                    'input[type="password"]',
-                    'input[name*="password"]',
-                    'input[placeholder*="password"]',
-                    'input[placeholder*="Password"]',
-                    'input[id*="password"]',
-                    'input[aria-label*="password"]',
-                    'input[aria-label*="Password"]'
-                ]
-                
-                password_field = None
-                max_wait = 10  # Wait up to 10 seconds for password field
-                for wait_time in range(max_wait):
-                    for selector in password_selectors:
-                        try:
-                            password_field = self.page.locator(selector)
-                            if password_field.is_visible():
-                                self.logger.info(f"Found password field: {selector}")
-                                break
-                        except:
-                            continue
-                    
-                    if password_field and password_field.is_visible():
+            # Look for Google login button
+            google_login_selectors = [
+                'button:has-text("Continue with Google")',
+                'button:has-text("Google")',
+                '[data-testid="google-login"]',
+                '.google-login',
+                'a:has-text("Google")'
+            ]
+            
+            google_button = None
+            for selector in google_login_selectors:
+                try:
+                    google_button = self.page.locator(selector)
+                    if google_button.is_visible():
+                        self.logger.info(f"Found Google login button: {selector}")
                         break
-                    
-                    time.sleep(1)
+                except:
+                    continue
+            
+            if not google_button or not google_button.is_visible():
+                self.logger.error("Could not find Google login button")
+                return False
+            
+            # Click Google login button
+            google_button.click()
+            time.sleep(3)
+            
+            # Handle Google OAuth flow
+            return self._handle_google_oauth_flow()
+            
+        except Exception as e:
+            self.logger.error(f"Error during Indeed.com OAuth login: {e}")
+            return False
+    
+    def _handle_google_oauth_flow(self) -> bool:
+        """Handle the Google OAuth flow"""
+        try:
+            # Wait for Google OAuth page to load
+            self.page.wait_for_url("**/accounts.google.com/**", timeout=10000)
+            time.sleep(3)
+            
+            # Fill in Google credentials
+            email_field = self.page.locator('input[type="email"]')
+            if email_field.is_visible():
+                email_field.fill(self.credentials['username'])
+                time.sleep(1)
                 
-                if not password_field or not password_field.is_visible():
-                    self.logger.error("Could not find password field after email submission")
-                    return False
+                # Click Next
+                next_button = self.page.locator('button:has-text("Next"), button[type="submit"]')
+                if next_button.is_visible():
+                    next_button.click()
+                    time.sleep(3)
                 
                 # Fill password
-                password_field.fill(self.credentials['password'])
-                self.logger.info("Filled password")
-                
-                # Look for sign in/submit button
-                submit_selectors = [
-                    'button:has-text("Sign in")',
-                    'button:has-text("Sign In")',
-                    'button[type="submit"]',
-                    'input[type="submit"]',
-                    'button:has-text("Continue")',
-                    'button:has-text("Login")'
-                ]
-                
-                submit_button = None
-                for selector in submit_selectors:
-                    try:
-                        submit_button = self.page.locator(selector)
-                        if submit_button.is_visible():
-                            self.logger.info(f"Found submit button: {selector}")
-                            break
-                    except:
-                        continue
-                
-                if submit_button and submit_button.is_visible():
-                    submit_button.click()
-                    self.logger.info("Clicked submit button")
-                    time.sleep(5)
-                else:
-                    self.logger.error("Could not find submit button")
-                    return False
-                
-                # Check if login was successful
-                if self._is_logged_in():
-                    self.logger.info("Successfully logged in to Indeed.com")
-                    self._save_cookies()
-                    return True
-                else:
-                    self.logger.error("Login failed - still on login page")
-                    return False
+                password_field = self.page.locator('input[type="password"]')
+                if password_field.is_visible():
+                    password_field.fill(self.credentials['password'])
+                    time.sleep(1)
                     
-            except Exception as e:
-                self.logger.error(f"Error during login form submission: {e}")
+                    # Click Next/Sign in
+                    sign_in_button = self.page.locator('button:has-text("Next"), button:has-text("Sign in"), button[type="submit"]')
+                    if sign_in_button.is_visible():
+                        sign_in_button.click()
+                        time.sleep(5)
+            
+            # Handle consent screen if it appears
+            try:
+                consent_button = self.page.locator('button:has-text("Continue"), button:has-text("Allow"), button:has-text("Accept")')
+                if consent_button.is_visible():
+                    consent_button.click()
+                    time.sleep(3)
+            except:
+                pass
+            
+            # Wait for redirect back to Indeed.com
+            self.page.wait_for_url("**/indeed.com/**", timeout=30000)
+            time.sleep(5)
+            
+            # Check if login was successful
+            if self._is_logged_in():
+                self.logger.info("Successfully logged in to Indeed.com via Google OAuth")
+                return True
+            else:
+                self.logger.error("OAuth login failed - not logged in")
                 return False
                 
         except Exception as e:
-            self.logger.error(f"Error during Indeed.com login: {e}")
+            self.logger.error(f"Error during Google OAuth flow: {e}")
+            return False
+    
+    def _login_with_google_oauth(self) -> bool:
+        """Login using stored OAuth tokens"""
+        try:
+            # This would require implementing token-based authentication
+            # For now, we'll use the browser flow
+            return self.login()
+        except Exception as e:
+            self.logger.error(f"Error with OAuth token login: {e}")
             return False
     
     def _is_logged_in(self) -> bool:
@@ -284,20 +321,6 @@ class IndeedPlaywrightAgent:
             return False
         except:
             return False
-    
-    def _save_cookies(self):
-        """Save cookies for future use"""
-        try:
-            cookies = self.context.cookies()
-            cookie_data = {
-                "cookies": cookies,
-                "last_updated": datetime.now().isoformat()
-            }
-            with open('src/data/indeed_cookies.json', 'w') as f:
-                json.dump(cookie_data, f, indent=2)
-            self.logger.info("Indeed.com cookies saved successfully")
-        except Exception as e:
-            self.logger.error(f"Error saving Indeed.com cookies: {e}")
     
     def test_connection(self) -> Dict[str, Any]:
         """Test connection to Indeed.com"""
@@ -510,6 +533,6 @@ class IndeedPlaywrightAgent:
                 self.browser.close()
             if hasattr(self, 'playwright'):
                 self.playwright.stop()
-            self.logger.info("Indeed.com browser closed")
+            self.logger.info("Indeed.com OAuth browser closed")
         except Exception as e:
             self.logger.error(f"Error closing browser: {e}")
